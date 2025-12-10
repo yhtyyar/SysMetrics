@@ -1,12 +1,17 @@
 package com.sysmetrics.app.di
 
 import android.content.Context
+import com.sysmetrics.app.core.di.DefaultDispatcherProvider
+import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.repository.PreferencesRepository
 import com.sysmetrics.app.data.repository.SystemMetricsRepository
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.domain.repository.IPreferencesRepository
+import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import com.sysmetrics.app.domain.usecase.GetSystemMetricsUseCase
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +21,7 @@ import javax.inject.Singleton
 
 /**
  * Hilt module providing application-level dependencies.
+ * Uses interface bindings for repositories to enable easy testing and mocking.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,8 +29,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSystemDataSource(): SystemDataSource {
-        return SystemDataSource()
+    fun provideDispatcherProvider(): DispatcherProvider {
+        return DefaultDispatcherProvider()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSystemDataSource(
+        dispatcherProvider: DispatcherProvider
+    ): SystemDataSource {
+        return SystemDataSource(dispatcherProvider)
     }
 
     @Provides
@@ -39,7 +53,7 @@ object AppModule {
     @Singleton
     fun provideSystemMetricsRepository(
         systemDataSource: SystemDataSource
-    ): SystemMetricsRepository {
+    ): ISystemMetricsRepository {
         return SystemMetricsRepository(systemDataSource)
     }
 
@@ -47,20 +61,20 @@ object AppModule {
     @Singleton
     fun providePreferencesRepository(
         preferencesDataSource: PreferencesDataSource
-    ): PreferencesRepository {
+    ): IPreferencesRepository {
         return PreferencesRepository(preferencesDataSource)
     }
 
     @Provides
     fun provideGetSystemMetricsUseCase(
-        repository: SystemMetricsRepository
+        repository: ISystemMetricsRepository
     ): GetSystemMetricsUseCase {
         return GetSystemMetricsUseCase(repository)
     }
 
     @Provides
     fun provideManageOverlayConfigUseCase(
-        repository: PreferencesRepository
+        repository: IPreferencesRepository
     ): ManageOverlayConfigUseCase {
         return ManageOverlayConfigUseCase(repository)
     }

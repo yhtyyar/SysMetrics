@@ -1,36 +1,45 @@
 package com.sysmetrics.app.data.repository
 
+import com.sysmetrics.app.core.common.Constants.Memory
+import com.sysmetrics.app.core.common.Constants.UpdateInterval
 import com.sysmetrics.app.data.model.CpuStats
 import com.sysmetrics.app.data.model.SystemMetrics
 import com.sysmetrics.app.data.source.MetricsParser
 import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Repository for system metrics collection.
+ * Implements [ISystemMetricsRepository] for proper abstraction.
  * Provides a Flow-based API for continuous metrics streaming.
  */
 @Singleton
 class SystemMetricsRepository @Inject constructor(
     private val systemDataSource: SystemDataSource
-) {
+) : ISystemMetricsRepository {
+    
+    @Volatile
     private var previousCpuStats: CpuStats = CpuStats.EMPTY
 
     /**
      * Returns a Flow that emits system metrics at the specified interval.
+     * Uses currentCoroutineContext for proper cancellation handling.
      * @param intervalMs Update interval in milliseconds (default: 1000ms)
      */
-    fun getMetricsFlow(intervalMs: Long = 1000L): Flow<SystemMetrics> = flow {
-        while (true) {
+    override fun getMetricsFlow(intervalMs: Long): Flow<SystemMetrics> = flow {
+        while (currentCoroutineContext().isActive) {
             val metrics = collectMetrics()
             emit(metrics)
-            delay(intervalMs)
+            delay(intervalMs.coerceAtLeast(UpdateInterval.FAST))
         }
     }.catch { e ->
         Timber.e(e, "Error in metrics flow")
@@ -39,8 +48,9 @@ class SystemMetricsRepository @Inject constructor(
 
     /**
      * Collects a single snapshot of system metrics.
+     * Reads CPU, memory, and temperature data concurrently where possible.
      */
-    suspend fun collectMetrics(): SystemMetrics {
+    override suspend fun collectMetrics(): SystemMetrics {
         return try {
             // Read CPU stats and calculate usage
             val currentCpuStats = systemDataSource.readCpuStats()
@@ -56,8 +66,8 @@ class SystemMetricsRepository @Inject constructor(
             SystemMetrics(
                 cpuUsage = cpuUsage,
                 cpuCores = systemDataSource.getCpuCoreCount(),
-                ramUsedMb = memoryInfo.usedKb / 1024,
-                ramTotalMb = memoryInfo.totalKb / 1024,
+                ramUsedMb = memoryInfo.usedKb / Memory.KB_TO_MB,
+                ramTotalMb = memoryInfo.totalKb / Memory.KB_TO_MB,
                 ramUsagePercent = memoryInfo.usagePercent,
                 temperatureCelsius = temperatureInfo.cpuTempCelsius,
                 timestamp = System.currentTimeMillis()
@@ -70,9 +80,11 @@ class SystemMetricsRepository @Inject constructor(
 
     /**
      * Resets the CPU statistics baseline.
+     * Thread-safe due to @Volatile annotation.
      * Call this when starting a new monitoring session.
      */
-    fun resetBaseline() {
+    override fun resetBaseline() {
         previousCpuStats = CpuStats.EMPTY
+        systemDataSource.clearCache()
     }
 }

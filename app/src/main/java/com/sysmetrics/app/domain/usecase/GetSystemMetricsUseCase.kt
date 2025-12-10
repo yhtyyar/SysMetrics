@@ -1,21 +1,23 @@
 package com.sysmetrics.app.domain.usecase
 
+import com.sysmetrics.app.core.common.Constants.UpdateInterval
 import com.sysmetrics.app.data.model.SystemMetrics
-import com.sysmetrics.app.data.repository.SystemMetricsRepository
+import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
  * Use case for observing system metrics with configurable update interval.
+ * Encapsulates the business logic for metrics collection.
  */
 class GetSystemMetricsUseCase @Inject constructor(
-    private val repository: SystemMetricsRepository
+    private val repository: ISystemMetricsRepository
 ) {
     /**
      * Returns a Flow of system metrics updated at the specified interval.
-     * @param intervalMs Update interval in milliseconds
+     * @param intervalMs Update interval in milliseconds (default: 1000ms)
      */
-    operator fun invoke(intervalMs: Long = 1000L): Flow<SystemMetrics> {
+    operator fun invoke(intervalMs: Long = UpdateInterval.DEFAULT): Flow<SystemMetrics> {
         return repository.getMetricsFlow(intervalMs)
     }
 

@@ -1,5 +1,7 @@
 package com.sysmetrics.app.data.repository
 
+import com.sysmetrics.app.core.TestDispatcherProvider
+import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.model.CpuStats
 import com.sysmetrics.app.data.model.MemoryInfo
 import com.sysmetrics.app.data.model.SystemMetrics
@@ -7,6 +9,7 @@ import com.sysmetrics.app.data.model.TemperatureInfo
 import com.sysmetrics.app.data.source.SystemDataSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,11 +24,14 @@ import org.mockito.kotlin.whenever
 @OptIn(ExperimentalCoroutinesApi::class)
 class SystemMetricsRepositoryTest {
 
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var systemDataSource: SystemDataSource
     private lateinit var repository: SystemMetricsRepository
 
     @Before
     fun setup() {
+        dispatcherProvider = TestDispatcherProvider(testDispatcher)
         systemDataSource = mock()
         repository = SystemMetricsRepository(systemDataSource)
     }
