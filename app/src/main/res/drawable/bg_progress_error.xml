@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Progress bar - Error (Red > 80%) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/metric_error" />
+    <corners android:radius="@dimen/progress_bar_corner_radius" />
+</shape>

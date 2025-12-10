@@ -1,29 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Margins and Padding -->
+    <!-- ============================================ -->
+    <!-- Android TV Design System - Dimensions -->
+    <!-- Optimized for 2m viewing distance -->
+    <!-- ============================================ -->
+
+    <!-- Spacing & Padding (Android TV optimized) -->
+    <dimen name="spacing_tiny">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_xlarge">32dp</dimen>
+    <dimen name="spacing_xxlarge">48dp</dimen>
+
+    <!-- Layout Padding -->
+    <dimen name="padding_screen_horizontal">24dp</dimen>    <!-- Left/Right screen padding -->
+    <dimen name="padding_screen_top">32dp</dimen>           <!-- Top screen padding -->
+    <dimen name="padding_screen_bottom">24dp</dimen>        <!-- Bottom screen padding -->
+
+    <!-- Card Spacing -->
+    <dimen name="card_padding_horizontal">24dp</dimen>      <!-- Inside card padding -->
+    <dimen name="card_padding_vertical">20dp</dimen>        <!-- Inside card padding -->
+    <dimen name="card_margin_bottom">16dp</dimen>           <!-- Space between cards -->
+    <dimen name="card_corner_radius">8dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_height">120dp</dimen>                 <!-- Standard metric card height -->
+
+    <!-- Typography Sizes (Optimized for TV) -->
+    <dimen name="text_size_footer">12sp</dimen>             <!-- Footer, hints -->
+    <dimen name="text_size_tertiary">14sp</dimen>           <!-- Metric percentages -->
+    <dimen name="text_size_secondary">16sp</dimen>          <!-- Metric names -->
+    <dimen name="text_size_header">20sp</dimen>             <!-- Page titles -->
+    <dimen name="text_size_large">24sp</dimen>              <!-- Subheadings -->
+    <dimen name="text_size_value_small">32sp</dimen>        <!-- Small values -->
+    <dimen name="text_size_value">48sp</dimen>              <!-- Main metric values -->
+    <dimen name="text_size_value_large">56sp</dimen>        <!-- Extra large values -->
+
+    <!-- Touch Targets (D-pad/Focus optimization) -->
+    <dimen name="min_touch_target">56dp</dimen>             <!-- Minimum focusable size -->
+    <dimen name="button_height">56dp</dimen>
+    <dimen name="button_min_width">120dp</dimen>
+    <dimen name="button_corner_radius">8dp</dimen>
+    <dimen name="button_padding_horizontal">24dp</dimen>
+
+    <!-- Focus Indication -->
+    <dimen name="focus_border_width">2dp</dimen>            <!-- Focus border thickness -->
+    <dimen name="focus_padding">8dp</dimen>                 <!-- Space for focus indicator -->
+    <dimen name="focus_elevation">4dp</dimen>               <!-- Elevation when focused -->
+
+    <!-- Icons -->
+    <dimen name="icon_size_small">20dp</dimen>
+    <dimen name="icon_size_medium">24dp</dimen>             <!-- Metric icons -->
+    <dimen name="icon_size_large">32dp</dimen>              <!-- Button icons -->
+    <dimen name="icon_margin_end">12dp</dimen>              <!-- Space after icon -->
+
+    <!-- Progress Bar -->
+    <dimen name="progress_bar_height">8dp</dimen>
+    <dimen name="progress_bar_corner_radius">4dp</dimen>
+    <dimen name="progress_bar_margin_top">8dp</dimen>
+
+    <!-- Dividers -->
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="divider_margin_vertical">16dp</dimen>
+
+    <!-- Overlay (Floating widget) -->
+    <dimen name="overlay_width">220dp</dimen>
+    <dimen name="overlay_height">280dp</dimen>
+    <dimen name="overlay_padding">16dp</dimen>
+    <dimen name="overlay_corner_radius">12dp</dimen>
+    <dimen name="overlay_border_width">1dp</dimen>
+
+    <!-- Animations -->
+    <integer name="anim_duration_short">150</integer>       <!-- ms -->
+    <integer name="anim_duration_medium">200</integer>      <!-- ms -->
+    <integer name="anim_duration_long">300</integer>        <!-- ms -->
+
+    <!-- Legacy support -->
     <dimen name="margin_small">8dp</dimen>
     <dimen name="margin_medium">16dp</dimen>
     <dimen name="margin_large">24dp</dimen>
     <dimen name="padding_small">8dp</dimen>
     <dimen name="padding_medium">16dp</dimen>
     <dimen name="padding_large">24dp</dimen>
-
-    <!-- Card -->
-    <dimen name="card_corner_radius">12dp</dimen>
-    <dimen name="card_elevation">4dp</dimen>
-
-    <!-- Text -->
-    <dimen name="text_size_small">12sp</dimen>
-    <dimen name="text_size_medium">14sp</dimen>
-    <dimen name="text_size_large">18sp</dimen>
-    <dimen name="text_size_title">24sp</dimen>
-
-    <!-- Button -->
-    <dimen name="button_height">48dp</dimen>
-    <dimen name="button_corner_radius">8dp</dimen>
-
-    <!-- Overlay -->
-    <dimen name="overlay_width">200dp</dimen>
-    <dimen name="overlay_height">250dp</dimen>
-    <dimen name="overlay_padding">12dp</dimen>
 </resources>
