@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.preference.PreferenceManager
-import com.sysmetrics.app.service.SimpleOverlayService
+import com.sysmetrics.app.service.MinimalistOverlayService
 import timber.log.Timber
 
 /**

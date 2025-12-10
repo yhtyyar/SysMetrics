@@ -39,11 +39,6 @@
             </intent-filter>
         </activity>
         
-        <!-- Main Activity (Legacy) -->
-        <activity
-            android:name=".ui.MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.SysMetrics" />
 
         <!-- Settings Activity -->
         <activity
@@ -51,27 +46,7 @@
             android:exported="false"
             android:theme="@style/Theme.SysMetrics" />
 
-        <!-- Overlay Service (Original) -->
-        <service
-            android:name=".service.OverlayService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="system_monitoring" />
-        </service>
-
-        <!-- Simple Overlay Service (TvOverlay_cpu Pattern) -->
-        <service
-            android:name=".service.SimpleOverlayService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="system_monitoring" />
-        </service>
-
-        <!-- Minimalist Overlay Service -->
+        <!-- Optimized Overlay Service (Production) -->
         <service
             android:name=".service.MinimalistOverlayService"
             android:exported="false"

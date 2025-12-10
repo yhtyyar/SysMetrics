@@ -7,9 +7,9 @@ import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 /**
- * Simplified metrics collector utility
- * Wraps SystemDataSource for easier synchronous access
- * Following TvOverlay_cpu pattern
+ * Optimized metrics collector - production ready
+ * Efficient synchronous access to system metrics
+ * Temperature monitoring removed for better performance
  */
 class MetricsCollector(
     private val context: Context,
@@ -63,19 +63,6 @@ class MetricsCollector(
         }
     }
 
-    /**
-     * Get CPU temperature in Celsius
-     * @return Temperature or -1 if unavailable
-     */
-    fun getTemperature(): Float {
-        return try {
-            val tempInfo = runBlocking { systemDataSource.readTemperature() }
-            tempInfo.cpuTempCelsius.coerceIn(0f, 200f)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to get temperature")
-            -1f
-        }
-    }
 
     /**
      * Get CPU core count
