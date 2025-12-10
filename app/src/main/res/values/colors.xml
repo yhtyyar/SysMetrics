@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="primary_light">#42A5F5</color>
+    <color name="accent">#00BCD4</color>
+
+    <!-- Background Colors -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="card_background">#2D2D2D</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#757575</color>
+
+    <!-- Button Colors -->
+    <color name="start_button">#4CAF50</color>
+    <color name="stop_button">#F44336</color>
+
+    <!-- Metric Colors -->
+    <color name="cpu_color">#4DD0E1</color>
+    <color name="ram_color">#42A5F5</color>
+    <color name="temp_color">#66BB6A</color>
+    <color name="temp_warning">#FFA726</color>
+    <color name="temp_critical">#EF5350</color>
+
+    <!-- Status Colors -->
+    <color name="status_good">#66BB6A</color>
+    <color name="status_warning">#FFA726</color>
+    <color name="status_critical">#EF5350</color>
+
+    <!-- Overlay -->
+    <color name="overlay_background">#CC000000</color>
+</resources>
