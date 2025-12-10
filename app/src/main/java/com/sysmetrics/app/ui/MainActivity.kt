@@ -13,7 +13,7 @@ import androidx.preference.SwitchPreferenceCompat
 import com.sysmetrics.app.R
 import com.sysmetrics.app.core.extensions.hasOverlayPermission
 import com.sysmetrics.app.core.extensions.showToast
-import com.sysmetrics.app.service.SimpleOverlayService
+import com.sysmetrics.app.service.MinimalistOverlayService
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         private fun startOverlayService() {
             try {
                 val context = requireContext()
-                val serviceIntent = Intent(context, SimpleOverlayService::class.java)
+                val serviceIntent = Intent(context, MinimalistOverlayService::class.java)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(serviceIntent)
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         private fun stopOverlayService() {
             try {
                 val context = requireContext()
-                val serviceIntent = Intent(context, SimpleOverlayService::class.java)
+                val serviceIntent = Intent(context, MinimalistOverlayService::class.java)
                 context.stopService(serviceIntent)
 
                 Timber.d("Overlay service stopped")

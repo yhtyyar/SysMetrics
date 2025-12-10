@@ -23,10 +23,11 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Main Activity with improved UX
+ * Main Activity - Optimized UX
  * - Large toggle button with color indication (Red=OFF, Green=ON)
- * - Real-time metrics preview
+ * - Real-time CPU and RAM metrics preview
  * - Clear status messages
+ * Temperature monitoring removed for better performance
  */
 @AndroidEntryPoint
 class MainActivityOverlay : AppCompatActivity() {
@@ -211,16 +212,6 @@ class MainActivityOverlay : AppCompatActivity() {
                 val (usedMb, totalMb, ramPercent) = metricsCollector.getRamUsage()
                 tvRamPreview.text = String.format("%d / %d MB", usedMb, totalMb)
                 tvRamPreview.setTextColor(getColorForValue(ramPercent))
-                
-                // Temperature
-                val temp = metricsCollector.getTemperature()
-                if (temp > 0) {
-                    tvTempPreview.text = String.format("%.0f°C", temp)
-                    tvTempPreview.setTextColor(getColorForTemperature(temp))
-                } else {
-                    tvTempPreview.text = getString(R.string.not_available)
-                    tvTempPreview.setTextColor(getColor(R.color.text_quaternary))
-                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to update metrics preview")
@@ -238,16 +229,6 @@ class MainActivityOverlay : AppCompatActivity() {
         }
     }
 
-    /**
-     * Get color based on temperature
-     */
-    private fun getColorForTemperature(temp: Float): Int {
-        return when {
-            temp < 60 -> getColor(R.color.metric_success)
-            temp < 80 -> getColor(R.color.metric_warning)
-            else -> getColor(R.color.metric_error)
-        }
-    }
 
     /**
      * Request overlay permission from user
@@ -284,9 +265,9 @@ class MainActivityOverlay : AppCompatActivity() {
             SysMetrics requires overlay permission to display real-time metrics over other applications.
             
             This permission allows the app to show a floating window with:
-            • CPU usage
-            • RAM usage  
-            • Temperature
+            • System CPU usage
+            • System RAM usage  
+            • Top-3 apps by CPU and RAM
             
             The overlay is non-intrusive and can be stopped anytime.
         """.trimIndent()
