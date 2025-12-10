@@ -32,13 +32,18 @@
         <item>bottom_right</item>
     </string-array>
 
-    <!-- Top apps count -->
+    <!-- Top apps count (0-10 as per requirements) -->
     <string-array name="top_apps_counts">
         <item>None</item>
         <item>1 App</item>
         <item>2 Apps</item>
         <item>3 Apps</item>
+        <item>4 Apps</item>
         <item>5 Apps</item>
+        <item>6 Apps</item>
+        <item>7 Apps</item>
+        <item>8 Apps</item>
+        <item>9 Apps</item>
         <item>10 Apps</item>
     </string-array>
 
@@ -47,7 +52,12 @@
         <item>1</item>
         <item>2</item>
         <item>3</item>
+        <item>4</item>
         <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
         <item>10</item>
     </string-array>
 

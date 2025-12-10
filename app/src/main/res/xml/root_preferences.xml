@@ -38,9 +38,9 @@
             app:iconSpaceReserved="false" />
 
         <CheckBoxPreference
-            app:key="show_temperature"
-            app:title="Show Temperature"
-            app:summary="Display CPU temperature"
+            app:key="show_app_memory"
+            app:title="Show App Memory"
+            app:summary="Display SysMetrics own memory usage"
             app:defaultValue="true"
             app:iconSpaceReserved="false" />
 
