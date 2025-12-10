@@ -58,6 +58,7 @@ class MinimalistOverlayService : Service() {
     private lateinit var topAppsContainer: LinearLayout
 
     private var topAppsCount = DEFAULT_TOP_APPS_COUNT
+    private var topAppsSortBy = "combined"
     private var isBaselineInitialized = false
 
     override fun onCreate() {
@@ -127,7 +128,16 @@ class MinimalistOverlayService : Service() {
      */
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        topAppsCount = prefs.getString("top_apps_count", "3")?.toIntOrNull() ?: 3
+        topAppsCount = prefs.getString("top_apps_count", "3")?.toIntOrNull() ?: DEFAULT_TOP_APPS_COUNT
+        topAppsSortBy = prefs.getString("top_apps_sort", "combined") ?: "combined"
+        
+        // Apply overlay opacity if overlayView is already created
+        if (::overlayView.isInitialized) {
+            val opacity = prefs.getInt("overlay_opacity", 95)
+            overlayView.alpha = opacity / 100f
+        }
+        
+        Timber.d("Settings loaded: topAppsCount=$topAppsCount, sortBy=$topAppsSortBy, opacity=$opacity")
     }
 
     /**
@@ -259,11 +269,13 @@ class MinimalistOverlayService : Service() {
     }
 
     /**
-     * Update top apps list
+     * Update top apps list with configurable sorting
      */
     private fun updateTopApps() {
         try {
-            val topApps = processStatsCollector.getTopApps(topAppsCount)
+            if (topAppsCount <= 0) return
+            
+            val topApps = processStatsCollector.getTopApps(topAppsCount, topAppsSortBy)
             
             // Clear previous views (keep title)
             val childCount = topAppsContainer.childCount

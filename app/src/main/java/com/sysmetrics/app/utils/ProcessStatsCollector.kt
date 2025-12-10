@@ -37,9 +37,10 @@ class ProcessStatsCollector(private val context: Context) {
      * Get top N apps by resource usage
      * Shows only user-installed apps (not system apps)
      * @param count Number of top apps to return
-     * @return List of AppStats sorted by CPU + RAM usage
+     * @param sortBy Sorting criteria: "cpu", "ram", or "combined"
+     * @return List of AppStats sorted by specified criteria
      */
-    fun getTopApps(count: Int): List<AppStats> {
+    fun getTopApps(count: Int, sortBy: String = "combined"): List<AppStats> {
         try {
             if (count <= 0) return emptyList()
 
@@ -68,16 +69,30 @@ class ProcessStatsCollector(private val context: Context) {
                 }
             }
 
-            // Sort by combined score (CPU priority, then RAM)
-            return appStatsList
-                .sortedByDescending { it.cpuPercent * 10f + (it.ramMb / 100f) }
-                .take(count)
+            // Sort by specified criteria
+            val sorted = when (sortBy.lowercase()) {
+                "cpu" -> appStatsList.sortedByDescending { it.cpuPercent }
+                "ram" -> appStatsList.sortedByDescending { it.ramMb }
+                else -> appStatsList.sortedByDescending { it.combinedScore }
+            }
+
+            return sorted.take(count)
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to get top apps")
             return emptyList()
         }
     }
+    
+    /**
+     * Get top apps by CPU usage specifically
+     */
+    fun getTopAppsByCpu(count: Int): List<AppStats> = getTopApps(count, "cpu")
+    
+    /**
+     * Get top apps by RAM usage specifically
+     */
+    fun getTopAppsByRam(count: Int): List<AppStats> = getTopApps(count, "ram")
 
     /**
      * Check if package is a user-installed app (not system app)
@@ -275,4 +290,10 @@ data class AppStats(
     val appName: String,
     val cpuPercent: Float,
     val ramMb: Long
-)
+) {
+    /**
+     * Combined score for sorting (CPU priority + RAM weight)
+     */
+    val combinedScore: Float
+        get() = (cpuPercent * 10f) + (ramMb / 100f)
+}
