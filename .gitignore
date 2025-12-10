@@ -65,6 +65,7 @@ google-services.json
 
 # Log files
 *.log
+build_log*.txt
 
 # OS generated files
 .DS_Store
