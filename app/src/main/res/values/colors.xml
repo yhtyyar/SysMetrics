@@ -1,37 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
-    <color name="primary">#1976D2</color>
-    <color name="primary_dark">#1565C0</color>
-    <color name="primary_light">#42A5F5</color>
-    <color name="accent">#00BCD4</color>
+    <!-- ============================================ -->
+    <!-- Android TV Design System - Dark Theme -->
+    <!-- Optimized for 2m viewing distance -->
+    <!-- ============================================ -->
 
     <!-- Background Colors -->
+    <color name="background_primary">#121212</color>        <!-- Very dark grey -->
+    <color name="background_surface">#1E1E1E</color>        <!-- Dark grey - Cards, containers -->
+    <color name="background_elevated">#2D2D2D</color>       <!-- Elevated surfaces -->
+
+    <!-- Text Colors -->
+    <color name="text_primary">#E0E0E0</color>             <!-- Light grey - Main text -->
+    <color name="text_secondary">#AAAAAA</color>           <!-- Medium grey - Secondary text -->
+    <color name="text_tertiary">#999999</color>            <!-- Tertiary text -->
+    <color name="text_quaternary">#666666</color>          <!-- Footer, hints -->
+    <color name="text_header">#CCCCCC</color>              <!-- Page headers -->
+
+    <!-- Focus & Selection -->
+    <color name="focus_border">#2196F3</color>             <!-- Blue - Active element border -->
+    <color name="focus_shadow">#402196F3</color>           <!-- Blue with alpha - Shadow -->
+    <color name="selection_background">#1A2196F3</color>   <!-- Subtle blue background -->
+
+    <!-- Dividers & Borders -->
+    <color name="divider">#333333</color>                  <!-- Dark grey dividers -->
+    <color name="border_inactive">#404040</color>          <!-- Inactive borders -->
+
+    <!-- Metric Status Colors (Dynamic based on value) -->
+    <color name="metric_success">#4CAF50</color>           <!-- Green - < 50% -->
+    <color name="metric_warning">#FFC107</color>           <!-- Yellow - 50-80% -->
+    <color name="metric_error">#F44336</color>             <!-- Red - > 80% -->
+
+    <!-- Icon Colors -->
+    <color name="icon_cpu">#4DD0E1</color>                 <!-- Cyan -->
+    <color name="icon_ram">#42A5F5</color>                 <!-- Blue -->
+    <color name="icon_temp">#66BB6A</color>                <!-- Green -->
+    <color name="icon_default">#AAAAAA</color>             <!-- Default grey -->
+
+    <!-- Progress Bar -->
+    <color name="progress_background">#333333</color>      <!-- Unfilled portion -->
+    <color name="progress_track">#222222</color>           <!-- Track background -->
+
+    <!-- Button Colors -->
+    <color name="button_start">#4CAF50</color>             <!-- Start button -->
+    <color name="button_stop">#F44336</color>              <!-- Stop button -->
+    <color name="button_background">#2D2D2D</color>        <!-- Default button -->
+    <color name="button_text">#E0E0E0</color>              <!-- Button text -->
+
+    <!-- Overlay (for floating widgets) -->
+    <color name="overlay_background">#E6121212</color>     <!-- 90% opacity -->
+    <color name="overlay_border">#404040</color>
+
+    <!-- Transparent -->
+    <color name="transparent">#00000000</color>
+
+    <!-- Legacy support (keep for compatibility) -->
+    <color name="primary">#2196F3</color>
+    <color name="primary_dark">#1976D2</color>
+    <color name="accent">#2196F3</color>
+    
+    <!-- Legacy colors for old layouts -->
     <color name="background">#121212</color>
     <color name="surface">#1E1E1E</color>
     <color name="card_background">#2D2D2D</color>
-
-    <!-- Text Colors -->
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#B0B0B0</color>
-    <color name="text_hint">#757575</color>
-
-    <!-- Button Colors -->
     <color name="start_button">#4CAF50</color>
     <color name="stop_button">#F44336</color>
-
-    <!-- Metric Colors -->
+    <color name="text_hint">#757575</color>
     <color name="cpu_color">#4DD0E1</color>
     <color name="ram_color">#42A5F5</color>
     <color name="temp_color">#66BB6A</color>
-    <color name="temp_warning">#FFA726</color>
-    <color name="temp_critical">#EF5350</color>
-
-    <!-- Status Colors -->
-    <color name="status_good">#66BB6A</color>
-    <color name="status_warning">#FFA726</color>
-    <color name="status_critical">#EF5350</color>
-
-    <!-- Overlay -->
-    <color name="overlay_background">#CC000000</color>
 </resources>

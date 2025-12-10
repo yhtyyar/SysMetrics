@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.KeyEvent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -15,19 +16,22 @@ import com.sysmetrics.app.core.extensions.showToast
 import com.sysmetrics.app.core.extensions.startForegroundServiceCompat
 import com.sysmetrics.app.databinding.ActivityMainBinding
 import com.sysmetrics.app.service.OverlayService
+import com.sysmetrics.app.ui.home.HomeTvFragment
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
 /**
  * Main activity for SysMetrics.
- * Provides controls for starting/stopping the overlay service
- * and displays a preview of system metrics.
+ * Supports both traditional UI and Android TV optimized interface.
+ * Use TV interface by default on Android TV devices.
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private var binding: ActivityMainBinding? = null
     private val viewModel: MainViewModel by viewModels()
+    
+    private val useTvInterface = true // Set to true for TV interface
 
     private val overlayPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -41,15 +45,34 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        setupUI()
-        observeState()
+        
+        // Use TV interface if enabled
+        if (useTvInterface) {
+            setContentView(R.layout.activity_main_tv)
+            if (savedInstanceState == null) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, HomeTvFragment())
+                    .commit()
+            }
+        } else {
+            // Traditional interface
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            setContentView(binding!!.root)
+            setupUI()
+            observeState()
+        }
+    }
+    
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // Handle D-pad navigation for TV interface
+        if (useTvInterface) {
+            return super.onKeyDown(keyCode, event)
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun setupUI() {
-        binding.apply {
+        binding?.apply {
             btnToggleOverlay.setOnClickListener {
                 handleOverlayToggle()
             }
@@ -72,7 +95,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMetricsDisplay(metrics: com.sysmetrics.app.data.model.SystemMetrics) {
-        binding.apply {
+        binding?.apply {
             tvCpuValue.text = getString(R.string.percent_format, metrics.cpuUsage)
             tvRamValue.text = getString(
                 R.string.memory_format,
@@ -107,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateOverlayButton(enabled: Boolean) {
-        binding.btnToggleOverlay.apply {
+        binding?.btnToggleOverlay?.apply {
             text = getString(if (enabled) R.string.stop_overlay else R.string.start_overlay)
             setBackgroundColor(getColor(if (enabled) R.color.stop_button else R.color.start_button))
         }

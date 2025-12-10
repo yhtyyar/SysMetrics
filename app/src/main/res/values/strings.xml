@@ -47,4 +47,27 @@
     <string name="overlay_permission_required">Permission Required</string>
     <string name="overlay_permission_message">SysMetrics needs permission to display overlay window.</string>
     <string name="grant_permission">Grant Permission</string>
+
+    <!-- Android TV UI -->
+    <string name="metric_icon">Metric icon</string>
+    <string name="cpu_usage">CPU Usage</string>
+    <string name="ram_usage">RAM Usage</string>
+    <string name="temperature">Temperature</string>
+    <string name="cores_format">Cores: %d</string>
+    <string name="uptime_format">Uptime: %s</string>
+    <string name="navigation_hint">⬆ ⬇ Select  |  OK: Details  |  Back: Exit</string>
+    
+    <!-- Detail Screen -->
+    <string name="current_value">Current Value</string>
+    <string name="average_value">Average (5m)</string>
+    <string name="peak_value">Peak</string>
+    <string name="min_value">Min</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    
+    <!-- Memory Detail -->
+    <string name="total_memory">Total Memory</string>
+    <string name="used_memory">Used Memory</string>
+    <string name="free_memory">Free Memory</string>
+    <string name="available_memory">Available Memory</string>
 </resources>

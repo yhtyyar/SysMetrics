@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Background for metric cards with focus state -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Focused state -->
+    <item android:state_focused="true">
+        <layer-list>
+            <!-- Focus border -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/focus_border" />
+                    <corners android:radius="@dimen/card_corner_radius" />
+                </shape>
+            </item>
+            <!-- Inner card background -->
+            <item
+                android:left="@dimen/focus_border_width"
+                android:right="@dimen/focus_border_width"
+                android:top="@dimen/focus_border_width"
+                android:bottom="@dimen/focus_border_width">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/background_surface" />
+                    <corners android:radius="@dimen/card_corner_radius" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+
+    <!-- Default state -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_surface" />
+            <corners android:radius="@dimen/card_corner_radius" />
+        </shape>
+    </item>
+</selector>

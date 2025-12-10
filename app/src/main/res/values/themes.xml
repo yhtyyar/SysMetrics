@@ -1,22 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SysMetrics" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/primary</item>
+    <!-- ============================================ -->
+    <!-- Android TV Design System - Themes & Styles -->
+    <!-- ============================================ -->
+
+    <!-- Base Theme -->
+    <style name="Theme.SysMetrics" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/focus_border</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:windowBackground">@color/background</item>
+        <item name="colorAccent">@color/focus_border</item>
+        <item name="android:windowBackground">@color/background_primary</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
-        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:statusBarColor">@color/background_primary</item>
+        <item name="android:navigationBarColor">@color/background_primary</item>
+        <item name="android:windowContentTransitions">true</item>
     </style>
 
-    <style name="Theme.SysMetrics.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <!-- ==================== Typography Styles ==================== -->
+
+    <!-- Page Header -->
+    <style name="TextAppearance.Tv.Header" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">@dimen/text_size_header</item>
+        <item name="android:textColor">@color/text_header</item>
+        <item name="fontFamily">sans-serif-medium</item>
     </style>
+
+    <!-- Metric Name (CPU, RAM, Temperature) -->
+    <style name="TextAppearance.Tv.MetricName" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">@dimen/text_size_secondary</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <!-- Metric Value (48%, 1250 MB) -->
+    <style name="TextAppearance.Tv.MetricValue" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:textSize">@dimen/text_size_value</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Metric Percentage (below progress bar) -->
+    <style name="TextAppearance.Tv.MetricPercent" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textSize">@dimen/text_size_tertiary</item>
+        <item name="android:textColor">@color/text_tertiary</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <!-- Footer Text (Cores, Uptime) -->
+    <style name="TextAppearance.Tv.Footer" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/text_size_footer</item>
+        <item name="android:textColor">@color/text_quaternary</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <!-- Button Text -->
+    <style name="TextAppearance.Tv.Button" parent="TextAppearance.MaterialComponents.Button">
+        <item name="android:textSize">@dimen/text_size_secondary</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- ==================== Component Styles ==================== -->
+
+    <!-- Metric Card Container -->
+    <style name="TvMetricCard">
+        <item name="android:background">@drawable/bg_metric_card</item>
+        <item name="android:paddingStart">@dimen/card_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/card_padding_horizontal</item>
+        <item name="android:paddingTop">@dimen/card_padding_vertical</item>
+        <item name="android:paddingBottom">@dimen/card_padding_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/card_margin_bottom</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Button Primary -->
+    <style name="TvButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:minWidth">@dimen/button_min_width</item>
+        <item name="android:paddingStart">@dimen/button_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/button_padding_horizontal</item>
+        <item name="android:textAppearance">@style/TextAppearance.Tv.Button</item>
+        <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="backgroundTint">@color/button_background</item>
+    </style>
+
+    <!-- Button Start -->
+    <style name="TvButtonStart" parent="TvButton">
+        <item name="backgroundTint">@color/button_start</item>
+    </style>
+
+    <!-- Button Stop -->
+    <style name="TvButtonStop" parent="TvButton">
+        <item name="backgroundTint">@color/button_stop</item>
+    </style>
+
+    <!-- Divider -->
+    <style name="TvDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/divider_height</item>
+        <item name="android:background">@color/divider</item>
+        <item name="android:layout_marginTop">@dimen/divider_margin_vertical</item>
+        <item name="android:layout_marginBottom">@dimen/divider_margin_vertical</item>
+    </style>
+
+    <!-- ==================== Legacy Styles (Compatibility) ==================== -->
 
     <style name="CardStyle">
-        <item name="android:background">@color/card_background</item>
+        <item name="android:background">@color/background_surface</item>
         <item name="android:padding">16dp</item>
     </style>
 
