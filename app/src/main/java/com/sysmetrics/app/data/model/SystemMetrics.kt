@@ -2,14 +2,42 @@ package com.sysmetrics.app.data.model
 
 /**
  * Data class representing complete system metrics snapshot.
+ * Enhanced with GPU, network, and battery monitoring.
  */
 data class SystemMetrics(
+    // CPU metrics
     val cpuUsage: Float = 0f,
     val cpuCores: Int = 0,
+    
+    // RAM metrics
     val ramUsedMb: Long = 0,
     val ramTotalMb: Long = 0,
     val ramUsagePercent: Float = 0f,
+    
+    // Temperature
     val temperatureCelsius: Float = 0f,
+    
+    // GPU metrics (optional)
+    val gpuUsage: Float = 0f,
+    val gpuFrequencyMhz: Int = 0,
+    val gpuTemperature: Float = 0f,
+    val gpuVendor: String = "",
+    val hasGpu: Boolean = false,
+    
+    // Network metrics (optional)
+    val downloadSpeedKbps: Float = 0f,
+    val uploadSpeedKbps: Float = 0f,
+    val totalDownloadMb: Float = 0f,
+    val totalUploadMb: Float = 0f,
+    val hasNetwork: Boolean = false,
+    
+    // Battery metrics (optional)
+    val batteryPercent: Int = -1,
+    val batteryCharging: Boolean = false,
+    val batteryTemperature: Float = 0f,
+    val hasBattery: Boolean = false,
+    
+    // Timestamp
     val timestamp: Long = System.currentTimeMillis()
 ) {
     companion object {

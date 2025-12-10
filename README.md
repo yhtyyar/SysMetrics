@@ -229,6 +229,47 @@ Run benchmark tests:
 | Show RAM | On/Off | On |
 | Show Temperature | On/Off | On |
 
+## Debugging & Logging
+
+SysMetrics uses structured logging with tags for easy debugging. 
+
+**📖 Quick Start:** [QUICK_START_LOGGING.md](QUICK_START_LOGGING.md) - Start monitoring in 30 seconds  
+**📚 Full Guide:** [LOGGING_GUIDE.md](LOGGING_GUIDE.md) - Comprehensive 450+ line documentation
+
+### Quick Debug Commands
+
+**Monitor what's displayed on screen:**
+```bash
+adb logcat -s OVERLAY_DISPLAY:D
+```
+
+**Debug CPU calculation issues:**
+```bash
+adb logcat -s METRICS_CPU:D METRICS_BASELINE:D
+```
+
+**Check top apps collection:**
+```bash
+adb logcat -s PROC_TOP:D
+```
+
+**Monitor all SysMetrics activity:**
+```bash
+adb logcat | grep -E "OVERLAY_|METRICS_|PROC_"
+```
+
+### Logging Tags
+
+| Tag | Purpose | Example Output |
+|-----|---------|----------------|
+| `OVERLAY_DISPLAY` | What's shown on screen | `📺 CPU on SCREEN: 'CPU: 45%'` |
+| `OVERLAY_UPDATE` | Update cycle timing | `✅ Update cycle completed in 23ms` |
+| `METRICS_CPU` | CPU calculation details | `📈 CPU: totalΔ=645 → 48.2%` |
+| `PROC_TOP` | Top apps collection | `🏆 #1: YouTube - CPU=23.4%` |
+| `OVERLAY_SERVICE` | Service lifecycle | `✅ Baseline ready - Initial CPU: 12.5%` |
+
+**For complete logging documentation, troubleshooting guides, and real-world examples, see [LOGGING_GUIDE.md](LOGGING_GUIDE.md)**
+
 ## Contributing
 
 Contributions are welcome! Please follow these steps:

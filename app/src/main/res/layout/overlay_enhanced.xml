@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Enhanced Overlay Layout with GPU, Network, Battery -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_overlay"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:minWidth="200dp">
+
+    <!-- System Health Indicator -->
+    <TextView
+        android:id="@+id/system_health_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🟢 HEALTHY"
+        android:textSize="11sp"
+        android:textColor="@color/text_primary"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"
+        tools:text="🟢 HEALTHY" />
+
+    <!-- CPU -->
+    <TextView
+        android:id="@+id/cpu_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CPU: 0%"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="3dp"
+        tools:text="🟢 CPU: 45%" />
+
+    <!-- RAM -->
+    <TextView
+        android:id="@+id/ram_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RAM: 0/0 MB"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="3dp"
+        tools:text="🟡 RAM: 1234/4096 MB" />
+
+    <!-- GPU (optional) -->
+    <TextView
+        android:id="@+id/gpu_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GPU: 0%"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="3dp"
+        android:visibility="gone"
+        tools:text="🟢 GPU: 23% (Adreno)"
+        tools:visibility="visible" />
+
+    <!-- Temperature -->
+    <TextView
+        android:id="@+id/temperature_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TEMP: 0°C"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="8dp"
+        tools:text="🟡 TEMP: 52°C" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Network (optional) -->
+    <LinearLayout
+        android:id="@+id/network_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌐 NETWORK"
+            android:textSize="10sp"
+            android:textColor="@color/text_secondary"
+            android:textStyle="bold"
+            android:layout_marginBottom="3dp" />
+
+        <TextView
+            android:id="@+id/network_download_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↓ 0 KB/s"
+            android:textSize="11sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="2dp"
+            tools:text="↓ 1.2 MB/s" />
+
+        <TextView
+            android:id="@+id/network_upload_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↑ 0 KB/s"
+            android:textSize="11sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="8dp"
+            tools:text="↑ 0.3 MB/s" />
+
+    </LinearLayout>
+
+    <!-- Battery (optional) -->
+    <TextView
+        android:id="@+id/battery_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔋 N/A"
+        android:textSize="11sp"
+        android:textColor="@color/text_secondary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        tools:text="🔋 ⚡ 85%"
+        tools:visibility="visible" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginBottom="6dp" />
+
+    <!-- SysMetrics Self Stats -->
+    <TextView
+        android:id="@+id/self_stats_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Self: 0% / 0M"
+        android:textSize="10sp"
+        android:textColor="@color/text_tertiary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="6dp"
+        tools:text="Self: 2% / 45M" />
+
+    <!-- Top Apps Container -->
+    <LinearLayout
+        android:id="@+id/top_apps_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Top Apps Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🏆 TOP APPS"
+            android:textSize="10sp"
+            android:textColor="@color/text_secondary"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Dynamic app list will be added here -->
+        
+    </LinearLayout>
+
+</LinearLayout>

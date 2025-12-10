@@ -8,10 +8,15 @@ import com.sysmetrics.app.data.repository.SystemMetricsRepository
 import com.sysmetrics.app.data.source.NativeSystemDataSource
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.domain.collector.IMetricsCollector
+import com.sysmetrics.app.domain.collector.IProcessStatsCollector
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import com.sysmetrics.app.domain.usecase.GetSystemMetricsUseCase
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
+import com.sysmetrics.app.utils.MetricsCollector
+import com.sysmetrics.app.utils.ProcessStatsCollector
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +26,7 @@ import javax.inject.Singleton
 
 /**
  * Hilt module providing application-level dependencies.
- * Uses interface bindings for repositories to enable easy testing and mocking.
+ * Uses interface bindings for repositories and collectors to enable easy testing and mocking.
  */
 @Module
 @InstallIn(SingletonComponent::class)

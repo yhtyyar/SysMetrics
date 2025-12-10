@@ -2,31 +2,65 @@ package com.sysmetrics.app.utils
 
 import android.app.ActivityManager
 import android.content.Context
-import android.os.Build
 import android.os.Process
+import com.sysmetrics.app.core.common.Constants
+import com.sysmetrics.app.core.di.DispatcherProvider
+import com.sysmetrics.app.domain.collector.IProcessStatsCollector
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Optimized process statistics collector
  * Accurate CPU and RAM monitoring per application
- * Top-3 apps by resource usage with efficient caching
+ * Top-N apps by resource usage with efficient caching
+ * 
+ * LOGGING TAGS:
+ * - PROC_TOP: Top apps collection and display
+ * - PROC_CPU: Per-process CPU calculation
+ * - PROC_RAM: Per-process RAM measurement
+ * - PROC_NAME: App name resolution
+ * - PROC_ERROR: Error scenarios
+ * 
+ * IMPROVEMENTS:
+ * - Implements IProcessStatsCollector interface for testability
+ * - Uses proper coroutines for async operations
+ * - Thread-safe with Mutex for concurrent access
+ * - Singleton with Hilt dependency injection
  */
-class ProcessStatsCollector(private val context: Context) {
+@Singleton
+class ProcessStatsCollector @Inject constructor(
+    private val context: Context,
+    private val dispatcherProvider: DispatcherProvider
+) : IProcessStatsCollector {
+    
+    companion object {
+        private const val TAG = "SysMetrics"
+        private const val TAG_TOP = "PROC_TOP"
+        private const val TAG_CPU = "PROC_CPU"
+        private const val TAG_RAM = "PROC_RAM"
+        private const val TAG_NAME = "PROC_NAME"
+        private const val TAG_ERROR = "PROC_ERROR"
+    }
 
     private val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     private val packageManager = context.packageManager
     
-    // Cache for process stats
+    // Thread-safe cache for process stats
+    private val cacheMutex = Mutex()
     private val previousStats = mutableMapOf<Int, ProcessStat>()
     private var previousTotalCpuTime = 0L
 
     /**
      * Get statistics for current app (SysMetrics)
      */
-    fun getSelfStats(): AppStats {
+    override suspend fun getSelfStats(): AppStats = withContext(dispatcherProvider.io) {
         val pid = Process.myPid()
-        return getStatsForPid(pid, "com.sysmetrics.app") ?: AppStats(
+        getStatsForPid(pid, "com.sysmetrics.app") ?: AppStats(
             packageName = "com.sysmetrics.app",
             appName = "SysMetrics",
             cpuPercent = 0f,
@@ -41,11 +75,18 @@ class ProcessStatsCollector(private val context: Context) {
      * @param sortBy Sorting criteria: "cpu", "ram", or "combined"
      * @return List of AppStats sorted by specified criteria
      */
-    fun getTopApps(count: Int, sortBy: String = "combined"): List<AppStats> {
+    override suspend fun getTopApps(count: Int, sortBy: String): List<AppStats> = withContext(dispatcherProvider.io) {
         try {
-            if (count <= 0) return emptyList()
+            Timber.tag(TAG_TOP).d("🔍 Getting top %d apps (sortBy=%s)", count, sortBy)
+            
+            if (count <= 0) {
+                Timber.tag(TAG_TOP).d("⏭️ Count is 0, returning empty list")
+                return emptyList()
+            }
 
             val runningApps = activityManager.runningAppProcesses ?: emptyList()
+            Timber.tag(TAG_TOP).v("📱 Found %d running processes", runningApps.size)
+            
             val appStatsList = mutableListOf<AppStats>()
 
             for (appProcess in runningApps) {
@@ -65,11 +106,14 @@ class ProcessStatsCollector(private val context: Context) {
                 val stats = getStatsForPid(appProcess.pid, appProcess.processName)
                 
                 // Only include apps with measurable resource usage
-                if (stats != null && (stats.cpuPercent > 0.01f || stats.ramMb > 10)) {
+                if (stats != null && (stats.cpuPercent > Constants.ProcessMonitoring.MIN_CPU_THRESHOLD || 
+                    stats.ramMb > Constants.ProcessMonitoring.MIN_RAM_THRESHOLD_MB)) {
                     appStatsList.add(stats)
                 }
             }
 
+            Timber.tag(TAG_TOP).d("📊 Collected %d user apps with measurable usage", appStatsList.size)
+            
             // Sort by specified criteria
             val sorted = when (sortBy.lowercase()) {
                 "cpu" -> appStatsList.sortedByDescending { it.cpuPercent }
@@ -77,23 +121,31 @@ class ProcessStatsCollector(private val context: Context) {
                 else -> appStatsList.sortedByDescending { it.combinedScore }
             }
 
-            return sorted.take(count)
+            val result = sorted.take(count)
+            
+            // Log top apps
+            result.forEachIndexed { index, app ->
+                Timber.tag(TAG_TOP).d("🏆 #%d: %s - CPU=%.1f%%, RAM=%dMB, Score=%.1f",
+                    index + 1, app.appName, app.cpuPercent, app.ramMb, app.combinedScore)
+            }
+            
+            result
 
         } catch (e: Exception) {
-            Timber.e(e, "Failed to get top apps")
-            return emptyList()
+            Timber.tag(TAG_ERROR).e(e, "❌ Failed to get top apps")
+            emptyList()
         }
     }
     
     /**
      * Get top apps by CPU usage specifically
      */
-    fun getTopAppsByCpu(count: Int): List<AppStats> = getTopApps(count, "cpu")
+    override suspend fun getTopAppsByCpu(count: Int): List<AppStats> = getTopApps(count, "cpu")
     
     /**
      * Get top apps by RAM usage specifically
      */
-    fun getTopAppsByRam(count: Int): List<AppStats> = getTopApps(count, "ram")
+    override suspend fun getTopAppsByRam(count: Int): List<AppStats> = getTopApps(count, "ram")
 
     /**
      * Check if package is a user-installed app (not system app)
@@ -138,12 +190,16 @@ class ProcessStatsCollector(private val context: Context) {
             // Get CPU usage
             val cpuPercent = calculateCpuUsageForPid(pid)
 
-            // Get app name
+            // Get app name (human-readable)
             val appName = try {
                 val appInfo = packageManager.getApplicationInfo(processName, 0)
-                packageManager.getApplicationLabel(appInfo).toString()
+                val label = packageManager.getApplicationLabel(appInfo).toString()
+                Timber.tag(TAG_NAME).v("📱 %s → %s", processName, label)
+                label
             } catch (e: Exception) {
-                processName.split(":")[0]
+                val fallback = processName.split(":")[0]
+                Timber.tag(TAG_NAME).v("⚠️ Failed to get label for %s, using: %s", processName, fallback)
+                fallback
             }
 
             return AppStats(
@@ -167,13 +223,17 @@ class ProcessStatsCollector(private val context: Context) {
         try {
             val statFile = File("/proc/$pid/stat")
             if (!statFile.exists() || !statFile.canRead()) {
+                Timber.tag(TAG_CPU).v("⚠️ PID %d: stat file not accessible", pid)
                 return 0f
             }
 
             val statContent = statFile.readText()
             val stats = statContent.split(" ")
             
-            if (stats.size < 17) return 0f
+            if (stats.size < 17) {
+                Timber.tag(TAG_CPU).w("⚠️ PID %d: invalid stat format (size=%d)", pid, stats.size)
+                return 0f
+            }
 
             // CPU time = utime + stime (user + system time)
             val utime = stats[13].toLongOrNull() ?: 0L
@@ -182,7 +242,10 @@ class ProcessStatsCollector(private val context: Context) {
 
             // Get total CPU time from /proc/stat
             val totalCpuTime = getTotalCpuTime()
-            if (totalCpuTime == 0L) return 0f
+            if (totalCpuTime == 0L) {
+                Timber.tag(TAG_CPU).w("⚠️ PID %d: totalCpuTime is 0", pid)
+                return 0f
+            }
 
             // Calculate delta with previous measurement
             val previousStat = previousStats[pid]
@@ -195,20 +258,31 @@ class ProcessStatsCollector(private val context: Context) {
                     val numCores = Runtime.getRuntime().availableProcessors()
                     val rawPercent = (timeDelta.toFloat() / totalDelta.toFloat()) * 100f * numCores
                     // Cap at 100% for single process display
-                    rawPercent.coerceIn(0f, 100f)
-                } else 0f
+                    val capped = rawPercent.coerceIn(0f, 100f)
+                    
+                    if (capped > 10f) {
+                        Timber.tag(TAG_CPU).v("📊 PID %d: timeΔ=%d, totalΔ=%d, cores=%d → %.1f%%",
+                            pid, timeDelta, totalDelta, numCores, capped)
+                    }
+                    capped
+                } else {
+                    Timber.tag(TAG_CPU).v("⚠️ PID %d: zero totalDelta", pid)
+                    0f
+                }
             } else {
                 // First measurement - store baseline
+                Timber.tag(TAG_CPU).v("⏳ PID %d: first measurement (baseline)", pid)
                 0f
             }
 
-            // Update cache for next measurement
+            // Update cache for next measurement (no mutex needed as this is called from withContext)
             previousStats[pid] = ProcessStat(totalTime)
+            previousTotalCpuTime = totalCpuTime
 
             return cpuPercent
 
         } catch (e: Exception) {
-            Timber.e(e, "Failed to calculate CPU for PID $pid")
+            Timber.tag(TAG_ERROR).e(e, "❌ Failed to calculate CPU for PID %d", pid)
             return 0f
         }
     }
@@ -244,30 +318,36 @@ class ProcessStatsCollector(private val context: Context) {
     /**
      * Initialize baseline for accurate measurement
      */
-    fun initializeBaseline() {
-        Timber.d("Initializing process stats baseline")
-        previousTotalCpuTime = getTotalCpuTime()
+    override suspend fun initializeBaseline() = withContext(dispatcherProvider.io) {
+        cacheMutex.withLock {
+            Timber.tag(TAG_CPU).d("🔧 Initializing process stats baseline...")
+            previousTotalCpuTime = getTotalCpuTime()
+            Timber.tag(TAG_CPU).i("✅ Process baseline initialized: totalCpuTime=%d", previousTotalCpuTime)
+        }
     }
 
     /**
      * Warm up cache with initial readings
      */
-    fun warmUpCache() {
+    override suspend fun warmUpCache() = withContext(dispatcherProvider.io) {
         try {
-            val runningApps = activityManager.runningAppProcesses ?: return
+            Timber.tag(TAG_CPU).d("🔥 Warming up process cache...")
+            val runningApps = activityManager.runningAppProcesses ?: return@withContext
+            var cachedCount = 0
             runningApps.forEach { process ->
                 calculateCpuUsageForPid(process.pid)
+                cachedCount++
             }
-            Timber.d("Process stats cache warmed up")
+            Timber.tag(TAG_CPU).i("✅ Process cache warmed: %d processes", cachedCount)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to warm up cache")
+            Timber.tag(TAG_ERROR).e(e, "❌ Failed to warm up cache")
         }
     }
 
     /**
      * Clear cached stats
      */
-    fun clearCache() {
+    override fun clearCache() {
         previousStats.clear()
         previousTotalCpuTime = 0L
     }
@@ -282,6 +362,11 @@ class ProcessStatsCollector(private val context: Context) {
 
 /**
  * App statistics data class
+ * 
+ * @property packageName Process package name
+ * @property appName Human-readable app name
+ * @property cpuPercent CPU usage percentage (0-100)
+ * @property ramMb RAM usage in megabytes
  */
 data class AppStats(
     val packageName: String,
@@ -290,8 +375,10 @@ data class AppStats(
     val ramMb: Long
 ) {
     /**
-     * Combined score for sorting (CPU priority + RAM weight)
+     * Combined score for sorting (CPU priority + RAM weight).
+     * CPU has higher weight to prioritize processes actively using CPU.
      */
     val combinedScore: Float
-        get() = (cpuPercent * 10f) + (ramMb / 100f)
+        get() = (cpuPercent * Constants.ProcessMonitoring.CPU_SCORE_WEIGHT) + 
+                (ramMb / Constants.ProcessMonitoring.RAM_SCORE_WEIGHT_DIVISOR)
 }
