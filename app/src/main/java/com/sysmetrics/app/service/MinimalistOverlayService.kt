@@ -57,7 +57,8 @@ class MinimalistOverlayService : Service() {
     private lateinit var selfStatsText: TextView
     private lateinit var topAppsContainer: LinearLayout
 
-    private var topAppsCount = 3 // Default, configurable in settings
+    private var topAppsCount = DEFAULT_TOP_APPS_COUNT
+    private var isBaselineInitialized = false
 
     override fun onCreate() {
         super.onCreate()
@@ -67,18 +68,39 @@ class MinimalistOverlayService : Service() {
         metricsCollector = MetricsCollector(this, systemDataSource)
         processStatsCollector = ProcessStatsCollector(this)
 
-        // Initialize CPU baseline measurement
-        metricsCollector.getCpuUsage()
-
-        // Load settings
         loadSettings()
-
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
         createOverlayView()
         
-        // Delay first update to allow baseline measurement
-        handler.postDelayed(updateRunnable, 1000L)
+        // Initialize baseline with proper timing
+        initializeBaseline()
+    }
+
+    /**
+     * Initialize CPU baseline with proper 2-step measurement
+     * Required for accurate delta calculation
+     */
+    private fun initializeBaseline() {
+        handler.postDelayed({
+            // First baseline measurement
+            metricsCollector.getCpuUsage()
+            processStatsCollector.initializeBaseline()
+            
+            Timber.d("Baseline initialized - first measurement")
+            
+            // Second measurement after interval to establish delta
+            handler.postDelayed({
+                metricsCollector.getCpuUsage()
+                processStatsCollector.warmUpCache()
+                isBaselineInitialized = true
+                
+                Timber.d("Baseline ready - starting metrics updates")
+                
+                // Start regular updates
+                handler.post(updateRunnable)
+            }, BASELINE_INIT_DELAY)
+        }, 100L)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -219,10 +241,10 @@ class MinimalistOverlayService : Service() {
             ramText.text = String.format("RAM: %d/%d MB", usedMb, totalMb)
             ramText.setTextColor(getColorForValue(ramPercent))
 
-            // SysMetrics self stats with color
+            // SysMetrics self stats with color (compact format)
             val selfStats = processStatsCollector.getSelfStats()
             selfStatsText.text = String.format(
-                "SysMetrics: CPU: %.1f%% RAM: %d MB",
+                "Self: %.1f%% / %dM",
                 selfStats.cpuPercent,
                 selfStats.ramMb
             )
@@ -261,22 +283,22 @@ class MinimalistOverlayService : Service() {
     }
 
     /**
-     * Create view for single app stat
+     * Create view for single app stat (compact format)
      */
     private fun createAppView(appStats: AppStats): TextView {
         return TextView(this).apply {
             text = String.format(
-                "%s: CPU: %.0f%% RAM: %d MB",
-                appStats.appName.take(12),
+                "%s: %.0f%%/%dM",
+                appStats.appName.take(10),
                 appStats.cpuPercent,
                 appStats.ramMb
             )
-            textSize = 10f
+            textSize = 9f
             // Apply color based on CPU usage
             setTextColor(getColorForValue(appStats.cpuPercent))
             typeface = android.graphics.Typeface.MONOSPACE
             layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
                 bottomMargin = dpToPx(2)
@@ -300,5 +322,7 @@ class MinimalistOverlayService : Service() {
         private const val CHANNEL_ID = "sysmetrics_minimalist"
         private const val NOTIFICATION_ID = 2001
         private const val UPDATE_INTERVAL_MS = 500L
+        private const val BASELINE_INIT_DELAY = 1000L
+        private const val DEFAULT_TOP_APPS_COUNT = 3
     }
 }

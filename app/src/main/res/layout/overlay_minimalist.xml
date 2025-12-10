@@ -1,45 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Minimalist Overlay Layout -->
+<!-- Minimalist Overlay Layout - Compact Design -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_overlay"
-    android:padding="12dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:minWidth="180dp">
 
     <!-- Title -->
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="SysMetrics"
-        android:textSize="11sp"
+        android:textSize="10sp"
         android:textColor="@color/text_secondary"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="6dp" />
 
     <!-- CPU -->
     <TextView
         android:id="@+id/cpu_text"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="CPU: 0%"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textColor="@color/text_primary"
         android:fontFamily="monospace"
-        android:layout_marginBottom="4dp"
+        android:layout_marginBottom="3dp"
         tools:text="CPU: 48%" />
 
     <!-- RAM -->
     <TextView
         android:id="@+id/ram_text"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="RAM: 0/0 MB"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textColor="@color/text_primary"
         android:fontFamily="monospace"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="6dp"
         tools:text="RAM: 1250/1699 MB" />
 
     <!-- Divider -->
@@ -47,19 +51,19 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/divider"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="6dp" />
 
     <!-- SysMetrics Self Stats -->
     <TextView
         android:id="@+id/self_stats_text"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SysMetrics: CPU: 0% RAM: 0 MB"
-        android:textSize="11sp"
+        android:text="Self: 0% / 0M"
+        android:textSize="10sp"
         android:textColor="@color/text_tertiary"
         android:fontFamily="monospace"
-        android:layout_marginBottom="8dp"
-        tools:text="SysMetrics: CPU: 2% RAM: 25 MB" />
+        android:layout_marginBottom="6dp"
+        tools:text="Self: 2% / 25M" />
 
     <!-- Top Apps Container -->
     <LinearLayout
@@ -70,13 +74,13 @@
 
         <!-- Top Apps Title -->
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TOP Apps:"
-            android:textSize="11sp"
+            android:text="TOP:"
+            android:textSize="10sp"
             android:textColor="@color/text_secondary"
             android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="3dp" />
 
         <!-- Dynamic app list will be added here -->
         
