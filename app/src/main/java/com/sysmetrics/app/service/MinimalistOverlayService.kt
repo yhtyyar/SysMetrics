@@ -58,7 +58,8 @@ class MinimalistOverlayService : Service() {
     private lateinit var selfStatsText: TextView
     private lateinit var topAppsContainer: LinearLayout
 
-    private var topAppsCount = 3  // Fixed to top-3
+    private var topAppsCount = 3  // Default, configurable via settings
+    private var topAppsSortBy = "combined"  // Default sorting
     private var isBaselineInitialized = false
 
     override fun onCreate() {
@@ -125,9 +126,14 @@ class MinimalistOverlayService : Service() {
 
     /**
      * Load settings from preferences
+     * Supports dynamic configuration of top apps count and sorting
      */
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        
+        // Load top apps configuration
+        topAppsCount = prefs.getString("top_apps_count", "3")?.toIntOrNull() ?: 3
+        topAppsSortBy = prefs.getString("top_apps_sort", "combined") ?: "combined"
         
         // Apply overlay opacity if overlayView is already created
         val opacity = prefs.getInt("overlay_opacity", 95)
@@ -135,7 +141,7 @@ class MinimalistOverlayService : Service() {
             overlayView.alpha = opacity / 100f
         }
         
-        Timber.d("Settings loaded: topAppsCount=$topAppsCount, opacity=$opacity")
+        Timber.d("Settings loaded: topAppsCount=$topAppsCount, sortBy=$topAppsSortBy, opacity=$opacity")
     }
 
     /**
@@ -267,12 +273,22 @@ class MinimalistOverlayService : Service() {
     }
 
     /**
-     * Update top-3 apps list (combined CPU + RAM scoring)
+     * Update top-N apps list (configurable count and sorting)
+     * Supports dynamic configuration from settings
      */
     private fun updateTopApps() {
         try {
-            // Get top-3 apps by combined score (CPU priority + RAM weight)
-            val topApps = processStatsCollector.getTopApps(topAppsCount, "combined")
+            if (topAppsCount <= 0) {
+                // Clear all apps if count is 0
+                val childCount = topAppsContainer.childCount
+                if (childCount > 1) {
+                    topAppsContainer.removeViews(1, childCount - 1)
+                }
+                return
+            }
+            
+            // Get top-N apps by configured sorting method
+            val topApps = processStatsCollector.getTopApps(topAppsCount, topAppsSortBy)
             
             // Clear previous views (keep title)
             val childCount = topAppsContainer.childCount
