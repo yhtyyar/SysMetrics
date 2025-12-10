@@ -1,0 +1,105 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration file
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/misc.xml
+.idea/vcs.xml
+.idea/jarRepositories.xml
+.idea/kotlinc.xml
+.idea/compiler.xml
+.idea/deploymentTargetSelector.xml
+.idea/migrations.xml
+.idea/appInsightsSettings.xml
+*.ipr
+
+# NDK
+obj/
+.externalNativeBuild/
+.cxx/
+
+# IntelliJ
+/out/
+
+# Proguard
+proguard/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services
+google-services.json
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.tmp
+*.swp
+
+# Coverage reports
+coverage/
+*.exec
+
+# Test output
+test-results/
+
+# Lint
+lint-results*
+
+# Signing config
+signing.properties
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Documentation specs
+TZ_SysMetrics.md
+Starter_Code.md
+AI_Prompt_DevGuide.md
