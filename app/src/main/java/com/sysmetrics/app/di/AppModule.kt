@@ -5,13 +5,13 @@ import com.sysmetrics.app.core.di.DefaultDispatcherProvider
 import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.repository.PreferencesRepository
 import com.sysmetrics.app.data.repository.SystemMetricsRepository
+import com.sysmetrics.app.data.source.NativeSystemDataSource
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import com.sysmetrics.app.domain.usecase.GetSystemMetricsUseCase
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,6 +47,15 @@ object AppModule {
         @ApplicationContext context: Context
     ): PreferencesDataSource {
         return PreferencesDataSource(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNativeSystemDataSource(
+        dispatcherProvider: DispatcherProvider,
+        systemDataSource: SystemDataSource
+    ): NativeSystemDataSource {
+        return NativeSystemDataSource(dispatcherProvider, systemDataSource)
     }
 
     @Provides
