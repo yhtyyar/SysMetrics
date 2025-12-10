@@ -70,6 +70,27 @@
             app:defaultValue="3"
             app:iconSpaceReserved="false" />
 
+        <ListPreference
+            app:key="top_apps_sort"
+            app:title="Sort Top Apps By"
+            app:summary="Sorting criteria for top applications"
+            app:entries="@array/sort_options"
+            app:entryValues="@array/sort_values"
+            app:defaultValue="combined"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+    
+    <PreferenceCategory app:title="Appearance">
+        
+        <SeekBarPreference
+            app:key="overlay_opacity"
+            app:title="Overlay Opacity"
+            app:summary="Transparency level (adjustable)"
+            app:defaultValue="95"
+            app:showSeekBarValue="true"
+            app:iconSpaceReserved="false" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="About">

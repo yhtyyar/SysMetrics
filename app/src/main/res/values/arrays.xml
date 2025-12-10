@@ -50,4 +50,17 @@
         <item>5</item>
         <item>10</item>
     </string-array>
+
+    <!-- Top apps sorting criteria -->
+    <string-array name="sort_options">
+        <item>Combined (CPU + RAM)</item>
+        <item>CPU Usage</item>
+        <item>RAM Usage</item>
+    </string-array>
+
+    <string-array name="sort_values">
+        <item>combined</item>
+        <item>cpu</item>
+        <item>ram</item>
+    </string-array>
 </resources>
