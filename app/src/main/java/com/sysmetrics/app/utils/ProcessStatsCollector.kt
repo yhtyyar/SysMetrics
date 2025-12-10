@@ -228,6 +228,30 @@ class ProcessStatsCollector(private val context: Context) {
     }
 
     /**
+     * Initialize baseline for first measurement
+     */
+    fun initializeBaseline() {
+        Timber.d("Initializing process stats baseline")
+        getTotalCpuTime() // First read
+        previousTotalCpuTime = getTotalCpuTime()
+    }
+
+    /**
+     * Warm up cache with initial readings
+     */
+    fun warmUpCache() {
+        try {
+            val runningApps = activityManager.runningAppProcesses ?: return
+            runningApps.forEach { process ->
+                calculateCpuUsageForPid(process.pid)
+            }
+            Timber.d("Process stats cache warmed up")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to warm up cache")
+        }
+    }
+
+    /**
      * Clear cached stats
      */
     fun clearCache() {
