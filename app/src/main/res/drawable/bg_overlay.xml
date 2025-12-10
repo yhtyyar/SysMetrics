@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Background for overlay window -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/overlay_background" />
+    <corners android:radius="12dp" />
+    <stroke
+        android:width="@dimen/overlay_border_width"
+        android:color="@color/overlay_border" />
+</shape>

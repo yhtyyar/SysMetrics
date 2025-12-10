@@ -46,6 +46,10 @@
     <color name="button_stop">#F44336</color>              <!-- Stop button -->
     <color name="button_background">#2D2D2D</color>        <!-- Default button -->
     <color name="button_text">#E0E0E0</color>              <!-- Button text -->
+    
+    <!-- Toggle Button States -->
+    <color name="button_toggle_off">#1E1E1E</color>        <!-- Off state (dark) -->
+    <color name="button_toggle_on">#1B5E20</color>         <!-- On state (dark green) -->
 
     <!-- Overlay (for floating widgets) -->
     <color name="overlay_background">#E6121212</color>     <!-- 90% opacity -->

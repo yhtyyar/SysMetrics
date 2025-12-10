@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preferences for SystemOverlay control -->
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Overlay Control">
+        
+        <SwitchPreferenceCompat
+            app:key="overlay_enabled"
+            app:title="Enable Overlay"
+            app:summary="Show metrics floating window"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            app:key="auto_start_enabled"
+            app:title="Auto-start on Boot"
+            app:summary="Start overlay automatically when device boots"
+            app:defaultValue="false"
+            app:dependency="overlay_enabled"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Metrics Display">
+        
+        <CheckBoxPreference
+            app:key="show_cpu"
+            app:title="Show CPU"
+            app:summary="Display CPU usage"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            app:key="show_ram"
+            app:title="Show RAM"
+            app:summary="Display RAM usage"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            app:key="show_temperature"
+            app:title="Show Temperature"
+            app:summary="Display CPU temperature"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Performance">
+        
+        <ListPreference
+            app:key="update_interval"
+            app:title="Update Interval"
+            app:summary="How often metrics are updated"
+            app:entries="@array/update_intervals"
+            app:entryValues="@array/update_interval_values"
+            app:defaultValue="500"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Applications">
+        
+        <ListPreference
+            app:key="top_apps_count"
+            app:title="Top Apps Count"
+            app:summary="Number of top consuming apps to display"
+            app:entries="@array/top_apps_counts"
+            app:entryValues="@array/top_apps_count_values"
+            app:defaultValue="3"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="About">
+        
+        <Preference
+            app:key="app_version"
+            app:title="Version"
+            app:summary="1.0.0 (SystemOverlay)"
+            app:selectable="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            app:key="app_info"
+            app:title="About SysMetrics"
+            app:summary="Real-time system metrics overlay for Android TV"
+            app:selectable="false"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Button Toggle Selector with Focus Support -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Focused State -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_surface"/>
+            <corners android:radius="12dp"/>
+            <stroke 
+                android:width="3dp" 
+                android:color="@color/focus_border"/>
+            <padding 
+                android:left="4dp"
+                android:top="4dp"
+                android:right="4dp"
+                android:bottom="4dp"/>
+        </shape>
+    </item>
+    
+    <!-- Pressed State -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_elevated"/>
+            <corners android:radius="12dp"/>
+            <stroke 
+                android:width="2dp" 
+                android:color="@color/focus_border"/>
+        </shape>
+    </item>
+    
+    <!-- Default State -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_surface"/>
+            <corners android:radius="12dp"/>
+            <stroke 
+                android:width="2dp" 
+                android:color="@color/divider"/>
+        </shape>
+    </item>
+    
+</selector>

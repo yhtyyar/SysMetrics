@@ -47,11 +47,21 @@ data class MemoryInfo(
     val buffersKb: Long = 0,
     val cachedKb: Long = 0
 ) {
+    /**
+     * Used memory calculated as total - available.
+     * Clamped to 0 to prevent negative values.
+     */
     val usedKb: Long
-        get() = totalKb - availableKb
+        get() = (totalKb - availableKb).coerceAtLeast(0)
 
+    /**
+     * Memory usage percentage (0-100).
+     * Clamped to valid range.
+     */
     val usagePercent: Float
-        get() = if (totalKb > 0) (usedKb.toFloat() / totalKb) * 100f else 0f
+        get() = if (totalKb > 0) {
+            ((usedKb.toFloat() / totalKb) * 100f).coerceIn(0f, 100f)
+        } else 0f
 
     companion object {
         val EMPTY = MemoryInfo()
