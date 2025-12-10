@@ -27,10 +27,6 @@ class SystemDataSource @Inject constructor(
     
     private var cachedTemperature: TemperatureInfo? = null
     private var temperatureTimestamp: Long = 0L
-    
-    private val cpuCoreCount: Int by lazy {
-        Runtime.getRuntime().availableProcessors()
-    }
 
     /**
      * Reads CPU statistics from /proc/stat.
@@ -144,7 +140,9 @@ class SystemDataSource @Inject constructor(
      * Returns the number of available CPU cores.
      * Value is cached after first read.
      */
-    fun getCpuCoreCount(): Int = cpuCoreCount
+    fun getCpuCoreCount(): Int {
+        return Runtime.getRuntime().availableProcessors()
+    }
     
     /**
      * Clears all cached values.
