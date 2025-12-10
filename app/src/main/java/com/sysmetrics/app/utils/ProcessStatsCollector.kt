@@ -35,40 +35,70 @@ class ProcessStatsCollector(private val context: Context) {
 
     /**
      * Get top N apps by resource usage
+     * Shows only user-installed apps (not system apps)
      * @param count Number of top apps to return
      * @return List of AppStats sorted by CPU + RAM usage
      */
     fun getTopApps(count: Int): List<AppStats> {
         try {
-            val runningApps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                activityManager.runningAppProcesses ?: emptyList()
-            } else {
-                emptyList()
-            }
+            if (count <= 0) return emptyList()
 
+            val runningApps = activityManager.runningAppProcesses ?: emptyList()
             val appStatsList = mutableListOf<AppStats>()
 
             for (appProcess in runningApps) {
-                // Skip system processes and self
-                if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND 
-                    && appProcess.processName.startsWith("system")) {
+                val packageName = appProcess.processName.split(":")[0]
+                
+                // Skip current app (SysMetrics)
+                if (packageName == context.packageName) {
                     continue
                 }
 
+                // Check if it's a user-installed app
+                if (!isUserApp(packageName)) {
+                    continue
+                }
+
+                // Get stats for this process
                 val stats = getStatsForPid(appProcess.pid, appProcess.processName)
-                if (stats != null && stats.cpuPercent > 0.1f) {
+                
+                // Only include apps with measurable resource usage
+                if (stats != null && (stats.cpuPercent > 0.01f || stats.ramMb > 10)) {
                     appStatsList.add(stats)
                 }
             }
 
-            // Sort by combined score (CPU + RAM usage)
+            // Sort by combined score (CPU priority, then RAM)
             return appStatsList
-                .sortedByDescending { it.cpuPercent + (it.ramMb / 10f) }
+                .sortedByDescending { it.cpuPercent * 10f + (it.ramMb / 100f) }
                 .take(count)
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to get top apps")
             return emptyList()
+        }
+    }
+
+    /**
+     * Check if package is a user-installed app (not system app)
+     * @return true if user app, false if system app
+     */
+    private fun isUserApp(packageName: String): Boolean {
+        return try {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            
+            // User app if:
+            // 1. Not a system app (FLAG_SYSTEM)
+            // 2. Or is updated system app (FLAG_UPDATED_SYSTEM_APP)
+            val isSystemApp = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            val isUpdatedSystemApp = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+            
+            // Return true only for user-installed apps or updated system apps
+            !isSystemApp || isUpdatedSystemApp
+            
+        } catch (e: Exception) {
+            // If we can't get app info, assume it's a system process
+            false
         }
     }
 
@@ -115,6 +145,7 @@ class ProcessStatsCollector(private val context: Context) {
 
     /**
      * Calculate CPU usage for specific PID
+     * Uses delta measurement between calls for accurate results
      */
     private fun calculateCpuUsageForPid(pid: Int): Float {
         try {
@@ -133,23 +164,32 @@ class ProcessStatsCollector(private val context: Context) {
             val stime = stats[14].toLongOrNull() ?: 0L
             val totalTime = utime + stime
 
-            // Get total CPU time
+            // Get total CPU time from /proc/stat
             val totalCpuTime = getTotalCpuTime()
+            if (totalCpuTime == 0L) return 0f
 
-            // Calculate delta
+            // Calculate delta with previous measurement
             val previousStat = previousStats[pid]
             val cpuPercent = if (previousStat != null && previousTotalCpuTime > 0) {
-                val timeDelta = totalTime - previousStat.totalTime
-                val totalDelta = totalCpuTime - previousTotalCpuTime
+                val timeDelta = (totalTime - previousStat.totalTime).coerceAtLeast(0L)
+                val totalDelta = (totalCpuTime - previousTotalCpuTime).coerceAtLeast(0L)
                 
                 if (totalDelta > 0) {
-                    ((timeDelta.toFloat() / totalDelta.toFloat()) * 100f).coerceIn(0f, 100f)
+                    // Calculate percentage and multiply by core count for better accuracy
+                    val numCores = Runtime.getRuntime().availableProcessors()
+                    val rawPercent = (timeDelta.toFloat() / totalDelta.toFloat()) * 100f * numCores
+                    rawPercent.coerceIn(0f, 100f)
                 } else 0f
-            } else 0f
+            } else {
+                // First measurement - store baseline and return 0
+                0f
+            }
 
-            // Update cache
+            // Update cache for next measurement
             previousStats[pid] = ProcessStat(totalTime)
-            previousTotalCpuTime = totalCpuTime
+            if (previousTotalCpuTime == 0L) {
+                previousTotalCpuTime = totalCpuTime
+            }
 
             return cpuPercent
 

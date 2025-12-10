@@ -67,6 +67,9 @@ class MinimalistOverlayService : Service() {
         metricsCollector = MetricsCollector(this, systemDataSource)
         processStatsCollector = ProcessStatsCollector(this)
 
+        // Initialize CPU baseline measurement
+        metricsCollector.getCpuUsage()
+
         // Load settings
         loadSettings()
 
@@ -74,8 +77,8 @@ class MinimalistOverlayService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         createOverlayView()
         
-        // Start updates
-        handler.post(updateRunnable)
+        // Delay first update to allow baseline measurement
+        handler.postDelayed(updateRunnable, 1000L)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -206,18 +209,24 @@ class MinimalistOverlayService : Service() {
         try {
             // System metrics
             val cpuPercent = metricsCollector.getCpuUsage()
-            val (usedMb, totalMb, _) = metricsCollector.getRamUsage()
+            val (usedMb, totalMb, ramPercent) = metricsCollector.getRamUsage()
 
+            // Update CPU with color indicator
             cpuText.text = String.format("CPU: %.0f%%", cpuPercent)
-            ramText.text = String.format("RAM: %d/%d MB", usedMb, totalMb)
+            cpuText.setTextColor(getColorForValue(cpuPercent))
 
-            // SysMetrics self stats
+            // Update RAM with color indicator
+            ramText.text = String.format("RAM: %d/%d MB", usedMb, totalMb)
+            ramText.setTextColor(getColorForValue(ramPercent))
+
+            // SysMetrics self stats with color
             val selfStats = processStatsCollector.getSelfStats()
             selfStatsText.text = String.format(
                 "SysMetrics: CPU: %.1f%% RAM: %d MB",
                 selfStats.cpuPercent,
                 selfStats.ramMb
             )
+            selfStatsText.setTextColor(getColorForValue(selfStats.cpuPercent))
 
             // Top apps
             updateTopApps()
@@ -263,7 +272,8 @@ class MinimalistOverlayService : Service() {
                 appStats.ramMb
             )
             textSize = 10f
-            setTextColor(getColor(R.color.text_tertiary))
+            // Apply color based on CPU usage
+            setTextColor(getColorForValue(appStats.cpuPercent))
             typeface = android.graphics.Typeface.MONOSPACE
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -271,6 +281,18 @@ class MinimalistOverlayService : Service() {
             ).apply {
                 bottomMargin = dpToPx(2)
             }
+        }
+    }
+
+    /**
+     * Get color for load indicator
+     * Green: 0-50%, Yellow: 50-80%, Red: 80-100%
+     */
+    private fun getColorForValue(percent: Float): Int {
+        return when {
+            percent < 50f -> getColor(R.color.metric_normal)  // Green
+            percent < 80f -> getColor(R.color.metric_warning)  // Yellow/Orange
+            else -> getColor(R.color.metric_error)  // Red
         }
     }
 
