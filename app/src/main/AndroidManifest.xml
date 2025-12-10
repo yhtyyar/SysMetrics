@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- TV Feature -->
     <uses-feature
@@ -26,9 +27,9 @@
         android:theme="@style/Theme.SysMetrics"
         tools:targetApi="34">
 
-        <!-- Main Activity -->
+        <!-- Main Activity (New Overlay UI) -->
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.MainActivityOverlay"
             android:exported="true"
             android:theme="@style/Theme.SysMetrics">
             <intent-filter>
@@ -37,6 +38,12 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Main Activity (Legacy) -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SysMetrics" />
 
         <!-- Settings Activity -->
         <activity
@@ -44,7 +51,7 @@
             android:exported="false"
             android:theme="@style/Theme.SysMetrics" />
 
-        <!-- Overlay Service -->
+        <!-- Overlay Service (Original) -->
         <service
             android:name=".service.OverlayService"
             android:exported="false"
@@ -53,6 +60,37 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="system_monitoring" />
         </service>
+
+        <!-- Simple Overlay Service (TvOverlay_cpu Pattern) -->
+        <service
+            android:name=".service.SimpleOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="system_monitoring" />
+        </service>
+
+        <!-- Minimalist Overlay Service -->
+        <service
+            android:name=".service.MinimalistOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="system_monitoring" />
+        </service>
+
+        <!-- Boot Complete Receiver -->
+        <receiver
+            android:name=".receiver.BootCompleteReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

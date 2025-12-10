@@ -101,6 +101,9 @@ dependencies {
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // Preferences
+    implementation("androidx.preference:preference-ktx:1.2.1")
 
     // Logging
     implementation("com.jakewharton.timber:timber:5.0.1")
