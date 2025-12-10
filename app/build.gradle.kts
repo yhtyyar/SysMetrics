@@ -17,6 +17,19 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // NDK configuration for native code
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
+
+        // Enable native build
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-O3", "-ffast-math", "-std=c++17")
+                arguments += listOf("-DANDROID_STL=c++_shared")
+            }
+        }
     }
 
     buildTypes {
@@ -48,6 +61,16 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    // Native build configuration
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    ndkVersion = "25.2.9519653"
 }
 
 dependencies {
@@ -82,6 +105,9 @@ dependencies {
     // Logging
     implementation("com.jakewharton.timber:timber:5.0.1")
 
+    // LeakCanary - Memory leak detection (debug only)
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.6.0")
@@ -95,6 +121,9 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
+
+    // Benchmark Testing
+    androidTestImplementation("androidx.benchmark:benchmark-junit4:1.2.2")
 }
 
 kapt {
