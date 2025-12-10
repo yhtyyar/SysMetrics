@@ -18,10 +18,22 @@ object MetricsParser {
      */
     fun parseCpuStats(statLine: String): CpuStats {
         return try {
+            Timber.tag("PARSER").v("\ud83d\udd0d Parsing CPU line (length=%d): '%s'", 
+                statLine.length, statLine.take(80))
+            
             val parts = statLine.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
-            if (parts.size < 8) return CpuStats.EMPTY
+            Timber.tag("PARSER").v("\ud83d\udce6 Split into %d parts: %s", parts.size, parts.take(10))
+            
+            if (parts.size < 8) {
+                Timber.tag("PARSER").e("\u274c Insufficient parts: %d (need at least 8)", parts.size)
+                return CpuStats.EMPTY
+            }
+            
+            if (parts[0] != "cpu") {
+                Timber.tag("PARSER").w("\u26a0\ufe0f First part is '%s', expected 'cpu'", parts[0])
+            }
 
-            CpuStats(
+            val result = CpuStats(
                 user = parts[1].toLongOrNull() ?: 0,
                 nice = parts[2].toLongOrNull() ?: 0,
                 system = parts[3].toLongOrNull() ?: 0,
@@ -30,8 +42,14 @@ object MetricsParser {
                 irq = parts[6].toLongOrNull() ?: 0,
                 softirq = parts[7].toLongOrNull() ?: 0
             )
+            
+            Timber.tag("PARSER").d("\u2705 Parsed: user=%d, nice=%d, system=%d, idle=%d, iowait=%d, irq=%d, softirq=%d",
+                result.user, result.nice, result.system, result.idle, 
+                result.iowait, result.irq, result.softirq)
+            
+            result
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse CPU stats")
+            Timber.tag("PARSER").e(e, "\u274c Exception parsing CPU stats")
             CpuStats.EMPTY
         }
     }

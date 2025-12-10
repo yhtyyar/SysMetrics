@@ -35,16 +35,40 @@ class SystemDataSource @Inject constructor(
     suspend fun readCpuStats(): CpuStats = withContext(dispatcherProvider.io) {
         try {
             val file = File(SystemPaths.PROC_STAT)
-            if (!file.exists() || !file.canRead()) {
+            Timber.tag("SYS_DATA").v("📁 Reading CPU stats from: %s", file.absolutePath)
+            
+            if (!file.exists()) {
+                Timber.tag("SYS_DATA").e("❌ /proc/stat does NOT exist!")
+                return@withContext CpuStats.EMPTY
+            }
+            
+            if (!file.canRead()) {
+                Timber.tag("SYS_DATA").e("❌ /proc/stat exists but CANNOT READ (permission denied?)")
                 return@withContext CpuStats.EMPTY
             }
 
             file.bufferedReader().use { reader ->
-                val line = reader.readLine() ?: return@withContext CpuStats.EMPTY
-                MetricsParser.parseCpuStats(line)
+                val line = reader.readLine()
+                if (line == null) {
+                    Timber.tag("SYS_DATA").e("❌ /proc/stat is EMPTY (readLine returned null)")
+                    return@withContext CpuStats.EMPTY
+                }
+                
+                Timber.tag("SYS_DATA").d("📝 Raw /proc/stat line: '%s'", line.take(100))
+                
+                val result = MetricsParser.parseCpuStats(line)
+                
+                Timber.tag("SYS_DATA").d("📦 Parsed CpuStats: total=%d, user=%d, system=%d, idle=%d",
+                    result.total(), result.user, result.system, result.idle)
+                
+                if (result.total() == 0L) {
+                    Timber.tag("SYS_DATA").e("❌ Parsed CpuStats has ZERO total! Parsing failed?")
+                }
+                
+                result
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error reading CPU stats")
+            Timber.tag("SYS_DATA").e(e, "❌ EXCEPTION reading CPU stats")
             CpuStats.EMPTY
         }
     }

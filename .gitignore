@@ -104,3 +104,7 @@ fastlane/test_output
 TZ_SysMetrics.md
 Starter_Code.md
 AI_Prompt_DevGuide.md
+
+# External project folders (for reference/integration only)
+SystemOverlay/
+app/src/main/res/SystemOverlay/
