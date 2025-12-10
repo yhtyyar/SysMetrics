@@ -27,9 +27,10 @@
     <color name="border_inactive">#404040</color>          <!-- Inactive borders -->
 
     <!-- Metric Status Colors (Dynamic based on value) -->
-    <color name="metric_success">#4CAF50</color>           <!-- Green - < 50% -->
-    <color name="metric_warning">#FFC107</color>           <!-- Yellow - 50-80% -->
-    <color name="metric_error">#F44336</color>             <!-- Red - > 80% -->
+    <color name="metric_normal">#4CAF50</color>            <!-- Green - < 50% (Low usage, good) -->
+    <color name="metric_success">#4CAF50</color>           <!-- Green - Alias for metric_normal -->
+    <color name="metric_warning">#FFC107</color>           <!-- Yellow/Orange - 50-80% (Medium usage) -->
+    <color name="metric_error">#F44336</color>             <!-- Red - > 80% (High usage) -->
 
     <!-- Icon Colors -->
     <color name="icon_cpu">#4DD0E1</color>                 <!-- Cyan -->
