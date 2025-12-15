@@ -5,18 +5,16 @@ import com.sysmetrics.app.core.di.DefaultDispatcherProvider
 import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.repository.PreferencesRepository
 import com.sysmetrics.app.data.repository.SystemMetricsRepository
+import com.sysmetrics.app.data.source.BatteryDataSource
+import com.sysmetrics.app.data.source.GpuDataSource
 import com.sysmetrics.app.data.source.NativeSystemDataSource
+import com.sysmetrics.app.data.source.NetworkDataSource
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
-import com.sysmetrics.app.domain.collector.IMetricsCollector
-import com.sysmetrics.app.domain.collector.IProcessStatsCollector
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import com.sysmetrics.app.domain.usecase.GetSystemMetricsUseCase
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
-import com.sysmetrics.app.utils.MetricsCollector
-import com.sysmetrics.app.utils.ProcessStatsCollector
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,9 +64,12 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSystemMetricsRepository(
-        systemDataSource: SystemDataSource
+        systemDataSource: SystemDataSource,
+        gpuDataSource: GpuDataSource,
+        networkDataSource: NetworkDataSource,
+        batteryDataSource: BatteryDataSource
     ): ISystemMetricsRepository {
-        return SystemMetricsRepository(systemDataSource)
+        return SystemMetricsRepository(systemDataSource, gpuDataSource, networkDataSource, batteryDataSource)
     }
 
     @Provides

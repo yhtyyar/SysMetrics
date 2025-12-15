@@ -25,9 +25,10 @@ object AppModule {
     @Singleton
     fun provideMetricsCollector(
         @ApplicationContext context: Context,
-        systemDataSource: SystemDataSource
+        systemDataSource: SystemDataSource,
+        dispatcherProvider: DispatcherProvider
     ): MetricsCollector {
-        return MetricsCollector(context, systemDataSource)
+        return MetricsCollector(context, systemDataSource, dispatcherProvider)
     }
 
     /**
@@ -36,8 +37,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideProcessStatsCollector(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider
     ): ProcessStatsCollector {
-        return ProcessStatsCollector(context)
+        return ProcessStatsCollector(context, dispatcherProvider)
     }
 }

@@ -1,26 +1,46 @@
-# SysMetrics
+# SysMetrics Pro
 
-**Real-Time Android TV System Monitor**
+**Real-Time Android System Monitor with Process Analytics**
 
-A high-performance system monitoring application for Android TV that displays CPU, memory, and temperature metrics in a floating overlay window. Built with modern Android architecture (MVVM + Clean Architecture), optimized for minimal resource usage.
+A high-performance system monitoring application for Android that displays CPU, memory, temperature, and process metrics in a floating overlay window. Built with modern Android architecture (MVVM + Clean Architecture), optimized for minimal resource usage and maximum accuracy.
 
-![Android](https://img.shields.io/badge/Android-5.0%2B-green)
+![Android](https://img.shields.io/badge/Android-8.0%2B-green)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-MVVM%20%2B%20Clean-orange)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-## Features
+## 📚 Documentation
 
-- **Real-time CPU monitoring** - Overall CPU usage percentage with color-coded indicators
-- **RAM usage tracking** - Used/Total memory in MB with percentage display
-- **Temperature monitoring** - CPU temperature from thermal zones (when available)
-- **Configurable overlay** - Position, opacity, and update interval settings
-- **Minimal resource usage** - < 50MB RAM, < 2% CPU overhead in idle
-- **Android TV optimized** - Leanback launcher support, TV-friendly UI
-- **Modern architecture** - MVVM + Clean Architecture + Coroutines
-- **Native C++ optimization** - JNI-based metrics collection for 5-10x faster parsing
-- **Memory leak detection** - LeakCanary integration for debug builds
-- **Performance benchmarks** - Comprehensive benchmark tests for validation
+- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Product requirements and feature specifications
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development guide, code standards, testing
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[LOGGING_GUIDE.md](LOGGING_GUIDE.md)** - Comprehensive debugging guide
+
+## ✨ Features
+
+### Current Features (v1.5.0)
+- ✅ **Real-time CPU monitoring** - Overall CPU usage with color-coded indicators
+- ✅ **RAM usage tracking** - Used/Total memory in MB with percentage
+- ✅ **Temperature monitoring** - CPU temperature from thermal zones
+- ✅ **Configurable overlay** - Position, opacity, and update intervals
+- ✅ **Minimal resource usage** - <50MB RAM, <2% CPU overhead
+- ✅ **Android TV optimized** - Leanback launcher support, TV-friendly UI
+- ✅ **Modern architecture** - MVVM + Clean Architecture + Coroutines
+- ✅ **Native C++ optimization** - JNI-based metrics (10x faster)
+- ✅ **Memory leak detection** - LeakCanary integration (debug builds)
+- ✅ **Performance benchmarks** - Comprehensive validation suite
+- ✅ **Structured logging** - Timber-based debugging with 15+ tags
+
+### Planned Features (v2.0.0)
+- 🚧 **Process segmentation** - Self vs Other apps separation
+- 🚧 **Detailed memory analysis** - Breakdown by Native/Java Heap/Graphics
+- 🚧 **24-hour history** - Room database with auto-cleanup
+- 🚧 **Data export** - CSV/JSON export functionality
+- 🚧 **Material 3 UI** - Modern design with dark mode
+- 🚧 **Enhanced settings** - Complete configuration screen
+- 🚧 **Background service** - Continuous monitoring with WorkManager
+
+See [REQUIREMENTS.md](REQUIREMENTS.md) for detailed specifications.
 
 ## Screenshots
 
@@ -291,24 +311,50 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 - `test:` - Test additions/changes
 - `chore:` - Build/config changes
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [x] JNI optimization for high-frequency updates
-- [x] LeakCanary integration for memory leak detection
-- [x] Benchmark tests for performance validation
+### ✅ Completed (v1.0 - v1.5)
+- [x] Real-time CPU/RAM/Temperature monitoring
+- [x] Floating overlay with configurable position
+- [x] Native C++ optimization (JNI bridge)
+- [x] LeakCanary integration
+- [x] Benchmark tests
+- [x] Clean Architecture refactoring
+- [x] Structured logging system
+
+### 🚧 In Progress (v2.0)
+- [ ] Process segmentation (Self vs Other)
+- [ ] Room database for metrics history
+- [ ] Detailed memory breakdown
+- [ ] CSV/JSON export
+- [ ] Material 3 UI migration
+- [ ] Complete Settings screen
+- [ ] Background monitoring service
+
+### 🔮 Future (v2.1+)
 - [ ] Per-core CPU usage display
 - [ ] GPU monitoring (device-specific)
 - [ ] Network traffic monitoring
 - [ ] Draggable overlay positioning
-- [ ] Custom themes
-- [ ] Widget support
+- [ ] Custom themes and widgets
+- [ ] Historical charts and trends
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - Android documentation for WindowManager and system metrics
 - Kotlin Coroutines for reactive programming patterns
 - Hilt for simplified dependency injection
+- Clean Architecture principles by Robert C. Martin
+
+## 📖 Additional Resources
+
+- **Quick Start:** [QUICK_START_LOGGING.md](QUICK_START_LOGGING.md) - Start debugging in 30 seconds
+- **Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Complete development guide
+- **Requirements:** [REQUIREMENTS.md](REQUIREMENTS.md) - Feature specifications
+- **Release Notes:** [CHANGELOG.md](CHANGELOG.md) - Version history

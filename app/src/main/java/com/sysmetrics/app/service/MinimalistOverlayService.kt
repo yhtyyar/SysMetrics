@@ -77,6 +77,9 @@ class MinimalistOverlayService : LifecycleService() {
     
     @Inject
     lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
+    
+    @Inject
+    lateinit var preferencesDataSource: com.sysmetrics.app.data.source.PreferencesDataSource
 
     private lateinit var windowManager: WindowManager
     private lateinit var overlayView: LinearLayout
@@ -198,10 +201,9 @@ class MinimalistOverlayService : LifecycleService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         return START_STICKY
     }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         super.onDestroy()
@@ -368,8 +370,11 @@ class MinimalistOverlayService : LifecycleService() {
             params = layoutParams,
             windowManager = windowManager,
             onPositionChanged = { x, y ->
-                Timber.tag(TAG_SERVICE).d("Overlay position saved: ($x, $y)")
-                // TODO: Save position to preferences for persistence
+                Timber.tag(TAG_SERVICE).d("Overlay position changed: ($x, $y)")
+                lifecycleScope.launch {
+                    preferencesDataSource.updatePosition(x, y)
+                    Timber.tag(TAG_SERVICE).i("✅ Position saved to preferences")
+                }
             }
         )
         

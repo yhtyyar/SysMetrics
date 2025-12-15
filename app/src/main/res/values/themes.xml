@@ -65,9 +65,9 @@
 
     <!-- ==================== Component Styles ==================== -->
 
-    <!-- Metric Card Container -->
+    <!-- Metric Card Container with Enhanced Focus for TV Dark Theme -->
     <style name="TvMetricCard">
-        <item name="android:background">@drawable/bg_metric_card</item>
+        <item name="android:background">@drawable/selector_focusable_item</item>
         <item name="android:paddingStart">@dimen/card_padding_horizontal</item>
         <item name="android:paddingEnd">@dimen/card_padding_horizontal</item>
         <item name="android:paddingTop">@dimen/card_padding_vertical</item>
@@ -75,10 +75,11 @@
         <item name="android:layout_marginBottom">@dimen/card_margin_bottom</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
-        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:nextFocusDown">@+id/btnToggleOverlay</item>
     </style>
 
-    <!-- Button Primary -->
+    <!-- Button Primary with Enhanced Focus for TV -->
     <style name="TvButton" parent="Widget.MaterialComponents.Button">
         <item name="android:minHeight">@dimen/button_height</item>
         <item name="android:minWidth">@dimen/button_min_width</item>
@@ -87,6 +88,8 @@
         <item name="android:textAppearance">@style/TextAppearance.Tv.Button</item>
         <item name="cornerRadius">@dimen/button_corner_radius</item>
         <item name="backgroundTint">@color/button_background</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">@drawable/selector_focusable_item</item>
     </style>
 
     <!-- Button Start -->
