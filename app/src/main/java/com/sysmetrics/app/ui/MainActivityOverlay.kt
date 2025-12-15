@@ -11,7 +11,9 @@ import android.provider.Settings
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
 import com.sysmetrics.app.R
 import com.sysmetrics.app.core.extensions.hasOverlayPermission
 import com.sysmetrics.app.core.extensions.showToast
@@ -42,7 +44,9 @@ class MainActivityOverlay : AppCompatActivity() {
     private val updateRunnable = object : Runnable {
         override fun run() {
             if (isOverlayActive) {
-                updateMetricsPreview()
+                lifecycleScope.launch {
+                    updateMetricsPreview()
+                }
                 handler.postDelayed(this, 1000)
             }
         }
@@ -200,7 +204,7 @@ class MainActivityOverlay : AppCompatActivity() {
     /**
      * Update metrics preview display
      */
-    private fun updateMetricsPreview() {
+    private suspend fun updateMetricsPreview() {
         try {
             binding.apply {
                 // CPU

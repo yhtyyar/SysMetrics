@@ -81,7 +81,7 @@ class ProcessStatsCollector @Inject constructor(
             
             if (count <= 0) {
                 Timber.tag(TAG_TOP).d("⏭️ Count is 0, returning empty list")
-                return emptyList()
+                return@withContext emptyList()
             }
 
             val runningApps = activityManager.runningAppProcesses ?: emptyList()

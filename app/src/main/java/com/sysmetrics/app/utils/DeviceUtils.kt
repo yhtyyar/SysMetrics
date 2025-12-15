@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.PowerManager
 import com.sysmetrics.app.core.common.Constants
+import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +22,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class DeviceUtils @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     companion object {
         private const val TAG = "DEVICE_UTILS"
