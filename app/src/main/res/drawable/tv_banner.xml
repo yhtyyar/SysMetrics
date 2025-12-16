@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV Banner 320x180dp - Properly scaled logo with background -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Background -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1A1A1A"/>
+        </shape>
+    </item>
+    
+    <!-- Logo centered with proper sizing -->
+    <item
+        android:width="160dp"
+        android:height="160dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/app_logo"
+            android:gravity="center"
+            android:scaleType="fitCenter" />
+    </item>
+    
+</layer-list>

@@ -13,8 +13,8 @@ android {
         applicationId = "com.sysmetrics.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 4
-        versionName = "2.3.1"
+        versionCode = 5
+        versionName = "2.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
