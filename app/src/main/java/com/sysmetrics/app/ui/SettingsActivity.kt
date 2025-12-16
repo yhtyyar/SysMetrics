@@ -1,7 +1,6 @@
 package com.sysmetrics.app.ui
 
 import android.os.Bundle
-import android.widget.SeekBar
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -14,7 +13,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * Settings activity for configuring overlay appearance and behavior.
+ * Settings activity - simplified for TV usage
+ * Only position and metric toggles
  */
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
@@ -55,40 +55,12 @@ class SettingsActivity : AppCompatActivity() {
                 viewModel.updateConfig(position = position)
             }
 
-            // Update interval spinner values: 500ms, 1000ms, 2000ms
-            val intervals = listOf(500L, 1000L, 2000L)
-            rgInterval.setOnCheckedChangeListener { _, checkedId ->
-                val interval = when (checkedId) {
-                    R.id.rb_interval_500 -> 500L
-                    R.id.rb_interval_1000 -> 1000L
-                    R.id.rb_interval_2000 -> 2000L
-                    else -> return@setOnCheckedChangeListener
-                }
-                viewModel.updateConfig(updateIntervalMs = interval)
-            }
-
-            // Opacity seekbar
-            seekbarOpacity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        val opacity = progress / 100f
-                        tvOpacityValue.text = getString(R.string.percent_int_format, progress)
-                        viewModel.updateConfig(opacity = opacity)
-                    }
-                }
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            })
-
             // Metric toggles
             switchCpu.setOnCheckedChangeListener { _, isChecked ->
                 viewModel.updateConfig(showCpu = isChecked)
             }
             switchRam.setOnCheckedChangeListener { _, isChecked ->
                 viewModel.updateConfig(showRam = isChecked)
-            }
-            switchTemp.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateConfig(showTemperature = isChecked)
             }
 
             // Save button
@@ -112,22 +84,9 @@ class SettingsActivity : AppCompatActivity() {
                             OverlayPosition.BOTTOM_RIGHT -> rbBottomRight.isChecked = true
                         }
 
-                        // Interval
-                        when (config.updateIntervalMs) {
-                            500L -> rbInterval500.isChecked = true
-                            1000L -> rbInterval1000.isChecked = true
-                            2000L -> rbInterval2000.isChecked = true
-                        }
-
-                        // Opacity
-                        val opacityPercent = (config.opacity * 100).toInt()
-                        seekbarOpacity.progress = opacityPercent
-                        tvOpacityValue.text = getString(R.string.percent_int_format, opacityPercent)
-
                         // Metric toggles
                         switchCpu.isChecked = config.showCpu
                         switchRam.isChecked = config.showRam
-                        switchTemp.isChecked = config.showTemperature
                     }
                 }
             }

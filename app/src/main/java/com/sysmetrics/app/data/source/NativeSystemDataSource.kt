@@ -68,12 +68,12 @@ class NativeSystemDataSource @Inject constructor(
      * Fallback to Kotlin implementation.
      */
     private suspend fun collectMetricsKotlin(): SystemMetrics {
-        val cpuStats = fallbackDataSource.readCpuStats()
+        // Note: cpuStats reading removed - CPU calculation handled by MetricsCollector
         val memoryInfo = fallbackDataSource.readMemoryInfo()
         val temperatureInfo = fallbackDataSource.readTemperature()
 
         return SystemMetrics(
-            cpuUsage = 0f, // First reading won't have previous stats
+            cpuUsage = 0f, // Placeholder - actual CPU from MetricsCollector
             cpuCores = fallbackDataSource.getCpuCoreCount(),
             ramUsedMb = memoryInfo.usedKb / 1024,
             ramTotalMb = memoryInfo.totalKb / 1024,

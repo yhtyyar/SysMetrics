@@ -60,7 +60,17 @@ class ProcessStatsCollector @Inject constructor(
      */
     override suspend fun getSelfStats(): AppStats = withContext(dispatcherProvider.io) {
         val pid = Process.myPid()
-        getStatsForPid(pid, "com.sysmetrics.app") ?: AppStats(
+        Timber.tag(TAG_CPU).d("🔍 Getting self stats for PID %d", pid)
+        
+        val stats = getStatsForPid(pid, "com.sysmetrics.app")
+        
+        if (stats != null) {
+            Timber.tag(TAG_CPU).d("✅ Self stats: CPU=%.2f%%, RAM=%dMB", stats.cpuPercent, stats.ramMb)
+        } else {
+            Timber.tag(TAG_CPU).w("⚠️ Failed to get self stats, returning default")
+        }
+        
+        stats ?: AppStats(
             packageName = "com.sysmetrics.app",
             appName = "SysMetrics",
             cpuPercent = 0f,
@@ -249,9 +259,9 @@ class ProcessStatsCollector @Inject constructor(
 
             // Calculate delta with previous measurement
             val previousStat = previousStats[pid]
-            val cpuPercent = if (previousStat != null && previousTotalCpuTime > 0) {
+            val cpuPercent = if (previousStat != null && previousStat.previousTotalCpuTime > 0) {
                 val timeDelta = (totalTime - previousStat.totalTime).coerceAtLeast(0L)
-                val totalDelta = (totalCpuTime - previousTotalCpuTime).coerceAtLeast(0L)
+                val totalDelta = (totalCpuTime - previousStat.previousTotalCpuTime).coerceAtLeast(0L)
                 
                 if (totalDelta > 0) {
                     // Optimized calculation for multi-core accuracy
@@ -260,7 +270,7 @@ class ProcessStatsCollector @Inject constructor(
                     // Cap at 100% for single process display
                     val capped = rawPercent.coerceIn(0f, 100f)
                     
-                    if (capped > 10f) {
+                    if (capped > 0.1f) { // Log even small non-zero values for debugging
                         Timber.tag(TAG_CPU).v("📊 PID %d: timeΔ=%d, totalΔ=%d, cores=%d → %.1f%%",
                             pid, timeDelta, totalDelta, numCores, capped)
                     }
@@ -275,8 +285,9 @@ class ProcessStatsCollector @Inject constructor(
                 0f
             }
 
-            // Update cache for next measurement (no mutex needed as this is called from withContext)
-            previousStats[pid] = ProcessStat(totalTime)
+            // Update cache for next measurement - FIXED: Store per-PID totalCpuTime
+            previousStats[pid] = ProcessStat(totalTime, totalCpuTime)
+            // Keep global previousTotalCpuTime for baseline initialization compatibility
             previousTotalCpuTime = totalCpuTime
 
             return cpuPercent
@@ -354,9 +365,11 @@ class ProcessStatsCollector @Inject constructor(
 
     /**
      * Data class for process stats
+     * FIXED: Now stores previousTotalCpuTime per PID for accurate delta calculation
      */
     private data class ProcessStat(
-        val totalTime: Long
+        val totalTime: Long,
+        val previousTotalCpuTime: Long
     )
 }
 

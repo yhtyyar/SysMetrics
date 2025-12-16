@@ -62,28 +62,6 @@
         android:textSize="10sp"
         android:textColor="@color/text_tertiary"
         android:fontFamily="monospace"
-        android:layout_marginBottom="6dp"
-        tools:text="Self: 2% / 25M" />
-
-    <!-- Top Apps Container -->
-    <LinearLayout
-        android:id="@+id/top_apps_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <!-- Top Apps Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TOP:"
-            android:textSize="10sp"
-            android:textColor="@color/text_secondary"
-            android:textStyle="bold"
-            android:layout_marginBottom="3dp" />
-
-        <!-- Dynamic app list will be added here -->
-        
-    </LinearLayout>
+        tools:text="Self: 0.5% / 45M" />
 
 </LinearLayout>

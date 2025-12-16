@@ -65,7 +65,7 @@ class HomeTvFragment : Fragment(), DpadNavigationHandler.NavigationListener {
         
         // Setup key listener on root view
         binding.root.isFocusableInTouchMode = true
-        binding.root.setOnKeyListener { _, keyCode, event ->
+        binding.root.setOnKeyListener { _, _, event ->
             if (event.action == KeyEvent.ACTION_DOWN) {
                 dpadHandler.handleKeyEvent(event)
             } else {

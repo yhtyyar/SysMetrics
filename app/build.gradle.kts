@@ -13,8 +13,8 @@ android {
         applicationId = "com.sysmetrics.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -32,16 +32,34 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // For production: Use environment variables or gradle.properties
+            storeFile = file("release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "sysmetrics2024"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "sysmetrics"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "sysmetrics2024"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+            
+            // R8 optimizations
+            isDebuggable = false
+            isJniDebuggable = false
         }
         debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
 
@@ -60,6 +78,21 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = true
+        ignoreWarnings = false
+        warningsAsErrors = false
+        
+        // Disable specific checks for TV app
+        disable += listOf(
+            "IconMissingDensityFolder",
+            "IconDensities",
+            "MissingTranslation",
+            "ExtraTranslation"
+        )
     }
 
     // Native build configuration

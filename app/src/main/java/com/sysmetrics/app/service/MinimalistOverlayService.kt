@@ -108,10 +108,7 @@ class MinimalistOverlayService : LifecycleService() {
     private lateinit var cpuText: TextView
     private lateinit var ramText: TextView
     private lateinit var selfStatsText: TextView
-    private lateinit var topAppsContainer: LinearLayout
 
-    private var topAppsCount = Constants.OverlayService.DEFAULT_TOP_APPS_COUNT
-    private var topAppsSortBy = Constants.OverlayService.DEFAULT_SORT_BY
     private var isBaselineInitialized = false
 
     override fun onCreate() {
@@ -220,16 +217,9 @@ class MinimalistOverlayService : LifecycleService() {
 
     /**
      * Load settings from preferences
-     * Supports dynamic configuration of top apps count and sorting
      */
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        
-        // Load top apps configuration
-        topAppsCount = prefs.getString("top_apps_count", Constants.OverlayService.DEFAULT_TOP_APPS_COUNT.toString())
-            ?.toIntOrNull() ?: Constants.OverlayService.DEFAULT_TOP_APPS_COUNT
-        topAppsSortBy = prefs.getString("top_apps_sort", Constants.OverlayService.DEFAULT_SORT_BY) 
-            ?: Constants.OverlayService.DEFAULT_SORT_BY
         
         // Apply overlay opacity if overlayView is already created
         val opacity = prefs.getInt("overlay_opacity", Constants.OverlayService.DEFAULT_OPACITY_PERCENT)
@@ -237,8 +227,7 @@ class MinimalistOverlayService : LifecycleService() {
             overlayView.alpha = opacity / 100f
         }
         
-        Timber.tag(TAG_SETTINGS).i("⚙️ Settings loaded: topAppsCount=%d, sortBy=%s, opacity=%d", 
-            topAppsCount, topAppsSortBy, opacity)
+        Timber.tag(TAG_SETTINGS).i("⚙️ Settings loaded: opacity=%d", opacity)
     }
 
     /**
@@ -287,12 +276,11 @@ class MinimalistOverlayService : LifecycleService() {
             cpuText = overlayView.findViewById(R.id.cpu_text)
             ramText = overlayView.findViewById(R.id.ram_text)
             selfStatsText = overlayView.findViewById(R.id.self_stats_text)
-            topAppsContainer = overlayView.findViewById(R.id.top_apps_container)
 
             // Verify all views are found and log status
-            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Self=%b, Apps=%b",
+            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Self=%b",
                 ::cpuText.isInitialized, ::ramText.isInitialized,
-                ::selfStatsText.isInitialized, ::topAppsContainer.isInitialized)
+                ::selfStatsText.isInitialized)
 
             // Create window params
             val params = createLayoutParams()
@@ -458,73 +446,6 @@ class MinimalistOverlayService : LifecycleService() {
         selfStatsText.setTextColor(getColorForValue(selfStats.cpuPercent))
         
         Timber.tag(TAG_DISPLAY).d("📺 SELF on SCREEN: '%s'", selfDisplay)
-
-        // Top apps
-        updateTopApps()
-    }
-
-    /**
-     * Update top-N apps list (configurable count and sorting)
-     * Supports dynamic configuration from settings
-     */
-    private suspend fun updateTopApps() {
-        try {
-            if (topAppsCount <= 0) {
-                // Clear all apps if count is 0
-                val childCount = topAppsContainer.childCount
-                if (childCount > 1) {
-                    topAppsContainer.removeViews(1, childCount - 1)
-                }
-                Timber.tag(TAG_DISPLAY).d("📺 SCREEN: Top Apps section hidden (count=0)")
-                return
-            }
-            
-            // Get top-N apps by configured sorting method
-            val topApps = processStatsCollector.getTopApps(topAppsCount, topAppsSortBy)
-            
-            // Clear previous views (keep title)
-            val childCount = topAppsContainer.childCount
-            if (childCount > 1) {
-                topAppsContainer.removeViews(1, childCount - 1)
-            }
-
-            // Add top-N apps and log what's displayed
-            Timber.tag(TAG_DISPLAY).d("📺 SCREEN: Showing %d top apps:", topApps.size)
-            for ((index, app) in topApps.withIndex()) {
-                val appView = createAppView(app)
-                topAppsContainer.addView(appView)
-                Timber.tag(TAG_DISPLAY).d("📺   #%d: %s: %.0f%% / %dMB", 
-                    index + 1, app.appName, app.cpuPercent, app.ramMb)
-            }
-
-        } catch (e: Exception) {
-            Timber.tag("OVERLAY_ERROR").e(e, "❌ Failed to update top apps")
-        }
-    }
-
-    /**
-     * Create view for single app stat (optimized format)
-     */
-    private fun createAppView(appStats: AppStats): TextView {
-        return TextView(this).apply {
-            // Format: AppName: CPU% / RAM MB
-            text = String.format(
-                "%s: %.0f%% / %dM",
-                appStats.appName.take(Constants.OverlayService.APP_NAME_MAX_LENGTH),
-                appStats.cpuPercent,
-                appStats.ramMb
-            )
-            textSize = Constants.OverlayService.APP_TEXT_SIZE
-            // Apply color based on CPU usage
-            setTextColor(getColorForValue(appStats.cpuPercent))
-            typeface = android.graphics.Typeface.MONOSPACE
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(Constants.OverlayService.APP_BOTTOM_MARGIN_DP)
-            }
-        }
     }
 
     /**
