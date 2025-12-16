@@ -255,7 +255,7 @@ class MinimalistOverlayService : LifecycleService() {
         return NotificationCompat.Builder(this, Constants.OverlayService.CHANNEL_ID)
             .setContentTitle("SysMetrics Running")
             .setContentText("Monitoring system metrics")
-            .setSmallIcon(R.drawable.ic_monitor)
+            .setSmallIcon(R.drawable.ic_cpu)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
