@@ -54,7 +54,7 @@
         app:iconPadding="12dp"
         android:focusable="true"
         android:clickable="true"
-        android:background="@drawable/selector_button_toggle"
+        android:stateListAnimator="@animator/button_focus_animator"
         android:layout_marginTop="32dp"
         android:layout_marginStart="48dp"
         android:layout_marginEnd="48dp"
@@ -180,6 +180,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
         android:focusable="true"
+        android:stateListAnimator="@animator/button_focus_animator"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

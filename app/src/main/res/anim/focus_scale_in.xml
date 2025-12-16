@@ -7,13 +7,13 @@
     <scale
         android:fromXScale="1.0"
         android:fromYScale="1.0"
-        android:toXScale="1.02"
-        android:toYScale="1.02"
+        android:toXScale="1.08"
+        android:toYScale="1.08"
         android:pivotX="50%"
         android:pivotY="50%" />
     
     <alpha
-        android:fromAlpha="0.8"
+        android:fromAlpha="0.7"
         android:toAlpha="1.0" />
         
 </set>

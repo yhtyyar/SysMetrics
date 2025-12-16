@@ -56,7 +56,10 @@
                     android:layout_height="wrap_content"
                     android:text="@string/top_left"
                     android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
+                    android:buttonTint="@color/accent"
+                    android:focusable="true"
+                    android:background="@drawable/selector_focusable_item"
+                    android:padding="8dp" />
 
                 <RadioButton
                     android:id="@+id/rb_top_right"
@@ -64,7 +67,10 @@
                     android:layout_height="wrap_content"
                     android:text="@string/top_right"
                     android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
+                    android:buttonTint="@color/accent"
+                    android:focusable="true"
+                    android:background="@drawable/selector_focusable_item"
+                    android:padding="8dp" />
 
                 <RadioButton
                     android:id="@+id/rb_bottom_left"
@@ -72,7 +78,10 @@
                     android:layout_height="wrap_content"
                     android:text="@string/bottom_left"
                     android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
+                    android:buttonTint="@color/accent"
+                    android:focusable="true"
+                    android:background="@drawable/selector_focusable_item"
+                    android:padding="8dp" />
 
                 <RadioButton
                     android:id="@+id/rb_bottom_right"
@@ -80,100 +89,11 @@
                     android:layout_height="wrap_content"
                     android:text="@string/bottom_right"
                     android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
+                    android:buttonTint="@color/accent"
+                    android:focusable="true"
+                    android:background="@drawable/selector_focusable_item"
+                    android:padding="8dp" />
             </RadioGroup>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="@color/text_hint" />
-
-            <!-- Update Interval Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/update_interval"
-                android:textColor="@color/accent"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <RadioGroup
-                android:id="@+id/rg_interval"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/rb_interval_500"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/interval_500ms"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
-
-                <RadioButton
-                    android:id="@+id/rb_interval_1000"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/interval_1000ms"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
-
-                <RadioButton
-                    android:id="@+id/rb_interval_2000"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/interval_2000ms"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/accent" />
-            </RadioGroup>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="@color/text_hint" />
-
-            <!-- Opacity Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/opacity"
-                    android:textColor="@color/accent"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_opacity_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    tools:text="85%" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seekbar_opacity"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:max="100"
-                android:min="30"
-                android:progress="85"
-                android:progressTint="@color/accent"
-                android:thumbTint="@color/accent" />
 
             <View
                 android:layout_width="match_parent"
@@ -211,16 +131,6 @@
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch_temp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/show_temperature"
-                android:textColor="@color/text_primary"
-                android:checked="true"
-                app:thumbTint="@color/accent"
-                app:trackTint="@color/text_hint" />
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -235,6 +145,8 @@
                 android:backgroundTint="@color/primary"
                 android:text="@string/save"
                 android:textColor="@color/text_primary"
+                android:focusable="true"
+                android:stateListAnimator="@animator/button_focus_animator"
                 app:cornerRadius="@dimen/button_corner_radius" />
 
         </LinearLayout>

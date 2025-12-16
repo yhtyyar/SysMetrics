@@ -150,15 +150,13 @@ class MetricsCollector @Inject constructor(
     }
     
     /**
-     * Get CPU usage from system load average (fallback method)
+     * Get CPU usage from memory pressure (fallback method)
      * This ALWAYS works on Android regardless of version
+     * Note: Not accurate, but provides an estimate when /proc/stat unavailable
      */
     private fun getCpuFromLoadAverage(): Float {
         return try {
-            val cores = Runtime.getRuntime().availableProcessors()
-            val loadAverage = android.os.Debug.threadCpuTimeNanos() / 1000000f
-            
-            // Alternative: use system load
+            // Use memory pressure as CPU proxy (fallback only)
             val activityManager = context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
             val memInfo = android.app.ActivityManager.MemoryInfo()
             activityManager.getMemoryInfo(memInfo)

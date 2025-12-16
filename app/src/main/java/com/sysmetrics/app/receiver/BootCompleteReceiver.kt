@@ -4,13 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.preference.PreferenceManager
-import com.sysmetrics.app.service.MinimalistOverlayService
+import androidx.preference.PreferenceManager
 import timber.log.Timber
 
 /**
  * Boot complete receiver for auto-starting overlay service
- * Following TvOverlay_cpu pattern
+ * Auto-starts overlay if enabled in preferences
  */
 class BootCompleteReceiver : BroadcastReceiver() {
 
