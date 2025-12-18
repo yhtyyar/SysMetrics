@@ -1,31 +1,36 @@
 package com.sysmetrics.app.ui
 
 import android.os.Bundle
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sysmetrics.app.R
+import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.data.model.OverlayPosition
 import com.sysmetrics.app.databinding.ActivitySettingsBinding
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
  * Settings activity - simplified for TV usage
  * Only position and metric toggles
  */
-@AndroidEntryPoint
+// @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
-    private val viewModel: SettingsViewModel by viewModels()
+    private lateinit var viewModel: SettingsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Initialize dependencies from AppContainer
+        val appContainer = (application as SysMetricsApplication).appContainer
+        val factory = SettingsViewModelFactory(appContainer.manageOverlayConfigUseCase)
+        viewModel = ViewModelProvider(this, factory)[SettingsViewModel::class.java]
 
         setupToolbar()
         setupUI()
@@ -62,6 +67,9 @@ class SettingsActivity : AppCompatActivity() {
             switchRam.setOnCheckedChangeListener { _, isChecked ->
                 viewModel.updateConfig(showRam = isChecked)
             }
+            switchTime.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.updateConfig(showTime = isChecked)
+            }
 
             // Save button
             btnSave.setOnClickListener {
@@ -87,6 +95,7 @@ class SettingsActivity : AppCompatActivity() {
                         // Metric toggles
                         switchCpu.isChecked = config.showCpu
                         switchRam.isChecked = config.showRam
+                        switchTime.isChecked = config.showTime
                     }
                 }
             }

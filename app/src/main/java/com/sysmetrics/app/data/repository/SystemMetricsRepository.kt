@@ -17,8 +17,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Repository for system metrics collection.
@@ -26,8 +24,8 @@ import javax.inject.Singleton
  * Implements [ISystemMetricsRepository] for proper abstraction.
  * Provides a Flow-based API for continuous metrics streaming.
  */
-@Singleton
-class SystemMetricsRepository @Inject constructor(
+
+class SystemMetricsRepository constructor(
     private val systemDataSource: SystemDataSource,
     private val gpuDataSource: GpuDataSource,
     private val networkDataSource: NetworkDataSource,

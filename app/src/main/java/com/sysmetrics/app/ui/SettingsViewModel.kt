@@ -4,22 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.data.model.OverlayPosition
+import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * ViewModel for SettingsActivity.
  * Manages overlay configuration options.
  */
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel(
     private val manageOverlayConfigUseCase: ManageOverlayConfigUseCase
 ) : ViewModel() {
 
@@ -45,7 +43,8 @@ class SettingsViewModel @Inject constructor(
         opacity: Float? = null,
         showCpu: Boolean? = null,
         showRam: Boolean? = null,
-        showTemperature: Boolean? = null
+        showTemperature: Boolean? = null,
+        showTime: Boolean? = null
     ) {
         val current = pendingConfig ?: overlayConfig.value
         pendingConfig = current.copy(
@@ -54,7 +53,8 @@ class SettingsViewModel @Inject constructor(
             opacity = opacity ?: current.opacity,
             showCpu = showCpu ?: current.showCpu,
             showRam = showRam ?: current.showRam,
-            showTemperature = showTemperature ?: current.showTemperature
+            showTemperature = showTemperature ?: current.showTemperature,
+            showTime = showTime ?: current.showTime
         )
         _configModified.value = true
     }

@@ -11,7 +11,8 @@ data class OverlayConfig(
     val opacity: Float = 0.85f,
     val showCpu: Boolean = true,
     val showRam: Boolean = true,
-    val showTemperature: Boolean = true
+    val showTemperature: Boolean = true,
+    val showTime: Boolean = true  // Always show time by default
 ) {
     companion object {
         val DEFAULT = OverlayConfig()

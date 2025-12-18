@@ -6,8 +6,6 @@ import com.sysmetrics.app.data.model.GpuVendor
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Data source for GPU metrics.
@@ -18,8 +16,8 @@ import javax.inject.Singleton
  * - ARM Mali: /sys/devices/platform/mali/
  * - Generic: /sys/kernel/debug/dri/0/
  */
-@Singleton
-class GpuDataSource @Inject constructor(
+
+class GpuDataSource constructor(
     private val dispatcherProvider: DispatcherProvider
 ) {
     companion object {

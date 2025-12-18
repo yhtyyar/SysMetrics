@@ -22,6 +22,20 @@
         android:textStyle="bold"
         android:layout_marginBottom="6dp" />
 
+    <!-- Time Display -->
+    <TextView
+        android:id="@+id/time_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="22sp"
+        android:textColor="@color/accent"
+        android:fontFamily="monospace"
+        android:textStyle="bold"
+        android:visibility="visible"
+        android:layout_marginBottom="8dp"
+        tools:text="14:35" />
+
     <!-- CPU -->
     <TextView
         android:id="@+id/cpu_text"
@@ -60,7 +74,7 @@
         android:layout_height="wrap_content"
         android:text="Self: 0% / 0M"
         android:textSize="10sp"
-        android:textColor="@color/text_tertiary"
+        android:textColor="@color/accent"
         android:fontFamily="monospace"
         tools:text="Self: 0.5% / 45M" />
 

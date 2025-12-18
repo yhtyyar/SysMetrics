@@ -22,18 +22,21 @@ import androidx.preference.PreferenceManager
 import com.sysmetrics.app.R
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.core.common.Constants
+import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
 import com.sysmetrics.app.domain.collector.IMetricsCollector
 import com.sysmetrics.app.domain.collector.IProcessStatsCollector
-import com.sysmetrics.app.ui.overlay.DraggableOverlayTouchListener
+import com.sysmetrics.app.domain.formatter.IStringFormatter
 import com.sysmetrics.app.utils.AdaptivePerformanceMonitor
-import com.sysmetrics.app.utils.AppStats
 import com.sysmetrics.app.utils.DeviceUtils
-import dagger.hilt.android.AndroidEntryPoint
+import com.sysmetrics.app.utils.DraggableOverlayTouchListener
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Optimized overlay service - Production ready
@@ -52,7 +55,7 @@ import javax.inject.Inject
  * - Uses coroutines for async operations
  * - Better separation of concerns
  */
-@AndroidEntryPoint
+// @AndroidEntryPoint
 class MinimalistOverlayService : LifecycleService() {
     
     companion object {
@@ -63,23 +66,13 @@ class MinimalistOverlayService : LifecycleService() {
         private const val TAG_SETTINGS = "OVERLAY_SETTINGS"
     }
 
-    @Inject
-    lateinit var systemDataSource: SystemDataSource
-    
-    @Inject
-    lateinit var deviceUtils: DeviceUtils
-    
-    @Inject
-    lateinit var metricsCollector: IMetricsCollector
-    
-    @Inject
-    lateinit var processStatsCollector: IProcessStatsCollector
-    
-    @Inject
-    lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
-    
-    @Inject
-    lateinit var preferencesDataSource: com.sysmetrics.app.data.source.PreferencesDataSource
+    private lateinit var systemDataSource: SystemDataSource
+    private lateinit var deviceUtils: DeviceUtils
+    private lateinit var metricsCollector: IMetricsCollector
+    private lateinit var processStatsCollector: IProcessStatsCollector
+    private lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
+    private lateinit var preferencesDataSource: PreferencesDataSource
+    private lateinit var stringFormatter: IStringFormatter
 
     private lateinit var windowManager: WindowManager
     private lateinit var overlayView: LinearLayout
@@ -108,18 +101,35 @@ class MinimalistOverlayService : LifecycleService() {
     private lateinit var cpuText: TextView
     private lateinit var ramText: TextView
     private lateinit var selfStatsText: TextView
+    private lateinit var timeText: TextView
 
+    private var currentConfig: com.sysmetrics.app.data.model.OverlayConfig = com.sysmetrics.app.data.model.OverlayConfig.DEFAULT
     private var isBaselineInitialized = false
+    // Time formatters for better performance
+    private val timeFormat24h = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val timeFormat12h = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
     override fun onCreate() {
         super.onCreate()
         Timber.tag(TAG_SERVICE).i("✅ MinimalistOverlayService created")
         
+        // Initialize dependencies from AppContainer
+        val appContainer = (application as SysMetricsApplication).appContainer
+        deviceUtils = appContainer.deviceUtils
+        metricsCollector = appContainer.metricsCollector
+        processStatsCollector = appContainer.processStatsCollector
+        adaptiveMonitor = appContainer.adaptivePerformanceMonitor
+        stringFormatter = appContainer.stringFormatter
+        
+        // Create data sources directly (they are private in AppContainer)
+        systemDataSource = SystemDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
+        preferencesDataSource = PreferencesDataSource(this)
+        
         // Setup exception handler for TV-specific crashes
         setupExceptionHandler()
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        Timber.tag(TAG_SERVICE).d("📦 Collectors injected via Hilt")
+        Timber.tag(TAG_SERVICE).d("📦 Dependencies initialized from AppContainer")
         
         // Log device capabilities
         deviceUtils.logDeviceCapabilities()
@@ -132,6 +142,23 @@ class MinimalistOverlayService : LifecycleService() {
         createNotificationChannel()
         startForeground(Constants.OverlayService.NOTIFICATION_ID, createNotification())
         createOverlayView()
+        
+        // Observe config changes and apply them in real-time
+        lifecycleScope.launch {
+            preferencesDataSource.overlayConfig.collect { config ->
+                currentConfig = config
+                
+                // Update time visibility
+                if (::timeText.isInitialized) {
+                    timeText.visibility = if (config.showTime) android.view.View.VISIBLE else android.view.View.GONE
+                }
+                
+                // Update overlay position in real-time
+                if (::overlayView.isInitialized && ::layoutParams.isInitialized) {
+                    updateOverlayPosition(config)
+                }
+            }
+        }
         
         // Initialize baseline with proper timing
         Timber.tag(TAG_SERVICE).d("🔧 Starting baseline initialization...")
@@ -229,6 +256,20 @@ class MinimalistOverlayService : LifecycleService() {
         
         Timber.tag(TAG_SETTINGS).i("⚙️ Settings loaded: opacity=%d", opacity)
     }
+    
+    /**
+     * Load config and apply visibility settings
+     */
+    private fun loadConfigAndApplySettings() {
+        lifecycleScope.launch {
+            preferencesDataSource.overlayConfig.collect { config ->
+                currentConfig = config
+                if (::timeText.isInitialized) {
+                    timeText.visibility = if (config.showTime) android.view.View.VISIBLE else android.view.View.GONE
+                }
+            }
+        }
+    }
 
     /**
      * Create notification channel for foreground service
@@ -276,11 +317,15 @@ class MinimalistOverlayService : LifecycleService() {
             cpuText = overlayView.findViewById(R.id.cpu_text)
             ramText = overlayView.findViewById(R.id.ram_text)
             selfStatsText = overlayView.findViewById(R.id.self_stats_text)
+            timeText = overlayView.findViewById(R.id.time_text)
 
             // Verify all views are found and log status
-            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Self=%b",
+            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Self=%b, Time=%b",
                 ::cpuText.isInitialized, ::ramText.isInitialized,
-                ::selfStatsText.isInitialized)
+                ::selfStatsText.isInitialized, ::timeText.isInitialized)
+            
+            // Load config and apply visibility
+            loadConfigAndApplySettings()
 
             // Create window params
             val params = createLayoutParams()
@@ -351,23 +396,76 @@ class MinimalistOverlayService : LifecycleService() {
     /**
      * Enable dragging for mobile devices.
      */
+    /**
+     * Enable dragging for mobile devices.
+     */
     private fun enableDragging() {
         if (!::overlayView.isInitialized) return
         
-        val dragListener = DraggableOverlayTouchListener(
-            params = layoutParams,
-            windowManager = windowManager,
-            onPositionChanged = { x, y ->
-                Timber.tag(TAG_SERVICE).d("Overlay position changed: ($x, $y)")
-                lifecycleScope.launch {
-                    preferencesDataSource.updatePosition(x, y)
-                    Timber.tag(TAG_SERVICE).i("✅ Position saved to preferences")
+        if (deviceUtils.shouldEnableDragging()) {
+            val dragListener = DraggableOverlayTouchListener(
+                params = layoutParams,
+                windowManager = windowManager,
+                onPositionChanged = { x, y ->
+                    Timber.tag(TAG_SERVICE).d("Overlay dragged to: ($x, $y)")
+                    lifecycleScope.launch {
+                        try {
+                            preferencesDataSource.updatePosition(x, y)
+                            Timber.tag(TAG_SERVICE).i("✅ Position saved: ($x, $y)")
+                        } catch (e: Exception) {
+                            Timber.tag(TAG_SERVICE).e(e, "Failed to save position")
+                        }
+                    }
+                }
+            )
+            
+            overlayView.setOnTouchListener(dragListener)
+            Timber.tag(TAG_SERVICE).i("✅ Dragging enabled for mobile device")
+        } else {
+            Timber.tag(TAG_SERVICE).i("ℹ️ Dragging disabled (TV or no touchscreen)")
+        }
+    }
+    
+    /**
+     * Update overlay position based on configuration.
+     * Applies changes in real-time when settings are changed.
+     */
+    private fun updateOverlayPosition(config: com.sysmetrics.app.data.model.OverlayConfig) {
+        try {
+            // Use custom position if available, otherwise use predefined position
+            val (newX, newY) = when {
+                // If custom coordinates are set (from dragging), use them
+                config.positionX != 20 || config.positionY != 20 -> {
+                    Pair(config.positionX, config.positionY)
+                }
+                // Otherwise use predefined position
+                else -> {
+                    val margin = dpToPx(deviceUtils.getOverlayMargin())
+                    val displayMetrics = resources.displayMetrics
+                    when (config.position) {
+                        com.sysmetrics.app.data.model.OverlayPosition.TOP_LEFT -> Pair(margin, margin)
+                        com.sysmetrics.app.data.model.OverlayPosition.TOP_RIGHT -> 
+                            Pair(displayMetrics.widthPixels - overlayView.width - margin, margin)
+                        com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_LEFT -> 
+                            Pair(margin, displayMetrics.heightPixels - overlayView.height - margin)
+                        com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_RIGHT -> 
+                            Pair(displayMetrics.widthPixels - overlayView.width - margin,
+                                displayMetrics.heightPixels - overlayView.height - margin)
+                    }
                 }
             }
-        )
-        
-        overlayView.setOnTouchListener(dragListener)
-        Timber.tag(TAG_SERVICE).i("✅ Dragging enabled for mobile device")
+            
+            // Update layout params
+            layoutParams.x = newX
+            layoutParams.y = newY
+            
+            // Apply changes
+            windowManager.updateViewLayout(overlayView, layoutParams)
+            
+            Timber.tag(TAG_SERVICE).d("📍 Overlay position updated to: ($newX, $newY)")
+        } catch (e: Exception) {
+            Timber.tag(TAG_SERVICE).e(e, "Failed to update overlay position")
+        }
     }
 
     /**
@@ -412,15 +510,12 @@ class MinimalistOverlayService : LifecycleService() {
         }
     }
     
-    /**
-     * Update UI with metrics (must be called from main thread)
-     */
     private suspend fun updateUI(cpuPercent: Float, usedMb: Long, totalMb: Long, ramPercent: Float) {
-        // Update CPU with color indicator
-        val cpuDisplay = String.format("CPU: %.0f%%", cpuPercent)
+        // Update CPU with color indicator - use optimized string formatting
+        val cpuDisplay = stringFormatter.formatCpu(cpuPercent)
         cpuText.text = cpuDisplay
         cpuText.setTextColor(getColorForValue(cpuPercent))
-        
+
         val cpuColor = when {
             cpuPercent < 50 -> "GREEN"
             cpuPercent < 80 -> "YELLOW"
@@ -428,24 +523,29 @@ class MinimalistOverlayService : LifecycleService() {
         }
         Timber.tag(TAG_DISPLAY).d("📺 CPU on SCREEN: '%s' color=%s", cpuDisplay, cpuColor)
 
-        // Update RAM with color indicator
-        val ramDisplay = String.format("RAM: %d/%d MB", usedMb, totalMb)
+        // Update RAM with color indicator - use optimized string formatting
+        val ramDisplay = stringFormatter.formatRam(usedMb, totalMb)
         ramText.text = ramDisplay
         ramText.setTextColor(getColorForValue(ramPercent))
-        
+
         Timber.tag(TAG_DISPLAY).d("📺 RAM on SCREEN: '%s' (%.1f%%)", ramDisplay, ramPercent)
 
-        // SysMetrics self stats with color (compact format)
+        // SysMetrics self stats with color (compact format) - use optimized string formatting
         val selfStats = processStatsCollector.getSelfStats()
-        val selfDisplay = String.format(
-            "Self: %.1f%% / %dM",
-            selfStats.cpuPercent,
-            selfStats.ramMb
-        )
+        val selfDisplay = stringFormatter.formatSelfStats(selfStats.cpuPercent, selfStats.ramMb)
         selfStatsText.text = selfDisplay
         selfStatsText.setTextColor(getColorForValue(selfStats.cpuPercent))
-        
+
         Timber.tag(TAG_DISPLAY).d("📺 SELF on SCREEN: '%s'", selfDisplay)
+
+        // Update time display - always show time
+        val calendar = java.util.Calendar.getInstance()
+        val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(java.util.Calendar.MINUTE)
+
+        val currentTime = timeFormat24h.format(Date())
+        timeText.text = currentTime
+        Timber.tag(TAG_DISPLAY).v("🕒 TIME on SCREEN: '%s'", currentTime)
     }
 
     /**

@@ -6,19 +6,16 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.model.BatteryInfo
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Data source for battery information.
  * Useful for Android TV boxes with backup batteries.
  */
-@Singleton
-class BatteryDataSource @Inject constructor(
-    @ApplicationContext private val context: Context,
+
+class BatteryDataSource constructor(
+    private val context: Context,
     private val dispatcherProvider: DispatcherProvider
 ) {
     companion object {

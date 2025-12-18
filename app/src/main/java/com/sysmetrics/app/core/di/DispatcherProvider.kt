@@ -2,8 +2,6 @@ package com.sysmetrics.app.core.di
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Provides coroutine dispatchers for dependency injection.
@@ -18,8 +16,8 @@ interface DispatcherProvider {
 /**
  * Default implementation using standard Android dispatchers.
  */
-@Singleton
-class DefaultDispatcherProvider @Inject constructor() : DispatcherProvider {
+
+class DefaultDispatcherProvider constructor() : DispatcherProvider {
     override val main: CoroutineDispatcher = Dispatchers.Main
     override val io: CoroutineDispatcher = Dispatchers.IO
     override val default: CoroutineDispatcher = Dispatchers.Default

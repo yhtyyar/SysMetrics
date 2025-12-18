@@ -1,8 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.kapt")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -13,8 +11,8 @@ android {
         applicationId = "com.sysmetrics.app"
         minSdk = 21
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.4.0"
+        versionCode = 9
+        versionName = "2.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -128,9 +126,9 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
 
-    // Hilt DI
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-compiler:2.48")
+    // Hilt DI - temporarily disabled for testing
+    // implementation("com.google.dagger:hilt-android:2.48")
+    // kapt("com.google.dagger:hilt-compiler:2.48")
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -163,6 +161,6 @@ dependencies {
     androidTestImplementation("androidx.benchmark:benchmark-junit4:1.2.2")
 }
 
-kapt {
-    correctErrorTypes = true
-}
+// kapt {
+//     correctErrorTypes = true
+// }

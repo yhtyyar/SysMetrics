@@ -4,13 +4,12 @@ import com.sysmetrics.app.core.common.Constants.UpdateInterval
 import com.sysmetrics.app.data.model.SystemMetrics
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
 /**
  * Use case for observing system metrics with configurable update interval.
  * Encapsulates the business logic for metrics collection.
  */
-class GetSystemMetricsUseCase @Inject constructor(
+class GetSystemMetricsUseCase(
     private val repository: ISystemMetricsRepository
 ) {
     /**

@@ -9,16 +9,14 @@ import com.sysmetrics.app.data.model.TemperatureInfo
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Data source for reading system metrics from proc/sys filesystem.
  * Implements caching to reduce file I/O operations.
  * All file I/O operations are performed on IO dispatcher.
  */
-@Singleton
-class SystemDataSource @Inject constructor(
+
+class SystemDataSource constructor(
     private val dispatcherProvider: DispatcherProvider
 ) {
     // Cached values with timestamps

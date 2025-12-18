@@ -51,10 +51,40 @@ float calculate_cpu_usage(const CpuStats* prev, const CpuStats* curr);
 int read_memory_stats(MemoryStats* stats);
 
 /**
- * Reads temperature from thermal zone.
- * Returns temperature in Celsius, or -1 on failure.
+ * Process statistics for CPU calculation.
  */
-float read_temperature(int zone_index);
+typedef struct {
+    long utime;    // user time
+    long stime;    // system time
+    long total_time; // utime + stime
+} ProcessCpuStats;
+
+/**
+ * Reads CPU stats for specific PID from /proc/pid/stat.
+ * Returns 0 on success, -1 on failure.
+ */
+int read_process_cpu_stats(int pid, ProcessCpuStats* stats);
+
+/**
+ * Optimized string formatting for UI display.
+ * Returns formatted string length.
+ */
+int format_time_string(char* buffer, int buffer_size, int hour, int minute, bool use_24h);
+
+/**
+ * Format CPU usage string.
+ */
+int format_cpu_string(char* buffer, int buffer_size, float cpu_percent);
+
+/**
+ * Format RAM usage string.
+ */
+int format_ram_string(char* buffer, int buffer_size, long used_mb, long total_mb);
+
+/**
+ * Format self stats string.
+ */
+int format_self_stats_string(char* buffer, int buffer_size, float cpu_percent, long ram_mb);
 
 #ifdef __cplusplus
 }

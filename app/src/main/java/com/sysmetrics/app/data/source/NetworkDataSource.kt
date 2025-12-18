@@ -5,15 +5,13 @@ import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.model.NetworkStats
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Data source for network traffic statistics.
  * Tracks download/upload speeds using TrafficStats API.
  */
-@Singleton
-class NetworkDataSource @Inject constructor(
+
+class NetworkDataSource constructor(
     private val dispatcherProvider: DispatcherProvider
 ) {
     companion object {

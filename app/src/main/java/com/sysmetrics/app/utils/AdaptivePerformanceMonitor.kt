@@ -3,8 +3,6 @@ package com.sysmetrics.app.utils
 import com.sysmetrics.app.core.common.Constants
 import com.sysmetrics.app.data.model.SystemMetrics
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Adaptive performance monitor that adjusts update interval based on system load.
@@ -21,8 +19,7 @@ import javax.inject.Singleton
  * - Singleton for consistent state
  * - Better performance categorization
  */
-@Singleton
-class AdaptivePerformanceMonitor @Inject constructor() {
+class AdaptivePerformanceMonitor {
     
     companion object {
         private const val TAG = "ADAPTIVE_PERF"
