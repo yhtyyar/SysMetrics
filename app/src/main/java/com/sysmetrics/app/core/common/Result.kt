@@ -3,15 +3,51 @@ package com.sysmetrics.app.core.common
 /**
  * A generic wrapper class for handling success and error states.
  * Provides a type-safe way to handle operation results.
+ * 
+ * Usage:
+ * ```
+ * val result = Result.runCatching { metricsCollector.collect() }
+ * result.onSuccess { metrics -> 
+ *     updateUI(metrics) 
+ * }.onError { error ->
+ *     if (error.isRetryable) retry()
+ *     showError(error.message)
+ * }
+ * ```
  */
 sealed class Result<out T> {
     
+    /**
+     * Represents a successful operation with data.
+     */
     data class Success<T>(val data: T) : Result<T>()
     
+    /**
+     * Represents a failed operation with error details.
+     */
     data class Error(
         val exception: Throwable? = null,
-        val message: String = exception?.message ?: "Unknown error"
+        val message: String = exception?.message ?: "Unknown error",
+        val isRetryable: Boolean = false,
+        val errorType: ErrorType = ErrorType.UNKNOWN
     ) : Result<Nothing>()
+    
+    /**
+     * Represents a loading state.
+     */
+    object Loading : Result<Nothing>()
+    
+    /**
+     * Classification of error types for better handling.
+     */
+    enum class ErrorType {
+        NETWORK,        // Network connectivity issues
+        IO,             // File system errors
+        PERMISSION,     // Permission denied
+        TIMEOUT,        // Operation timeout
+        PARSE,          // Data parsing errors
+        UNKNOWN         // Unclassified errors
+    }
     
     val isSuccess: Boolean get() = this is Success
     val isError: Boolean get() = this is Error
@@ -21,7 +57,7 @@ sealed class Result<out T> {
      */
     fun getOrNull(): T? = when (this) {
         is Success -> data
-        is Error -> null
+        is Error, Loading -> null
     }
     
     /**
@@ -29,7 +65,7 @@ sealed class Result<out T> {
      */
     fun getOrDefault(default: @UnsafeVariance T): T = when (this) {
         is Success -> data
-        is Error -> default
+        is Error, Loading -> default
     }
     
     /**
@@ -38,6 +74,7 @@ sealed class Result<out T> {
     inline fun <R> map(transform: (T) -> R): Result<R> = when (this) {
         is Success -> Success(transform(data))
         is Error -> this
+        Loading -> Loading
     }
     
     /**

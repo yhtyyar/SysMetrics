@@ -48,8 +48,8 @@ class ProcessStatsCollector(
     private val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     private val packageManager = context.packageManager
     
-    // Thread-safe cache for process stats
-    private val cacheMutex = Any()
+    // Thread-safe cache for process stats using Kotlin Mutex
+    private val cacheMutex = Mutex()
     private val previousStats = mutableMapOf<Int, ProcessStat>()
     private var previousTotalCpuTime = 0L
 
@@ -372,12 +372,16 @@ class ProcessStatsCollector(
 
     /**
      * Initialize baseline for accurate measurement
+     * Using Mutex instead of synchronized for coroutine-safe access
      */
     override suspend fun initializeBaseline() = withContext(dispatcherProvider.io) {
-        synchronized(cacheMutex) {
+        cacheMutex.lock()
+        try {
             Timber.tag(TAG_CPU).d("🔧 Initializing process stats baseline...")
             previousTotalCpuTime = getTotalCpuTime()
             Timber.tag(TAG_CPU).i("✅ Process baseline initialized: totalCpuTime=%d", previousTotalCpuTime)
+        } finally {
+            cacheMutex.unlock()
         }
     }
 
