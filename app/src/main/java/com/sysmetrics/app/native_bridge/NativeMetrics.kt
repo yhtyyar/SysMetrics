@@ -87,13 +87,68 @@ object NativeMetrics {
     }
 
     /**
-     * Get number of CPU cores using native code.
+     * Get process CPU stats using native code (optimized).
+     * @return ProcessCpuData with utime, stime, total_time or null if failed
      */
-    fun getCpuCoreCountNative(): Int {
+    fun getProcessCpuStatsNative(pid: Int): ProcessCpuData? {
+        if (!isLoaded) return null
+
+        return runCatching {
+            val stats = getProcessCpuStats(pid)
+            if (stats != null && stats.size >= 3) {
+                ProcessCpuData(
+                    utime = stats[0],
+                    stime = stats[1],
+                    totalTime = stats[2]
+                )
+            } else {
+                null
+            }
+        }.getOrNull()
+    }
+
+    /**
+     * Format time string using native code (optimized).
+     */
+    fun formatTimeNative(hour: Int, minute: Int, use24h: Boolean): String {
         return if (isLoaded) {
-            runCatching { getCpuCoreCount() }.getOrDefault(-1)
+            runCatching { formatTimeString(hour, minute, use24h) }.getOrDefault("$hour:$minute")
         } else {
-            -1
+            if (use24h) String.format("%02d:%02d", hour, minute)
+            else String.format("%d:%02d %s", if (hour % 12 == 0) 12 else hour % 12, minute, if (hour >= 12) "PM" else "AM")
+        }
+    }
+
+    /**
+     * Format CPU string using native code.
+     */
+    fun formatCpuNative(cpuPercent: Float): String {
+        return if (isLoaded) {
+            runCatching { formatCpuString(cpuPercent) }.getOrDefault(String.format("CPU: %.1f%%", cpuPercent))
+        } else {
+            String.format("CPU: %.1f%%", cpuPercent)
+        }
+    }
+
+    /**
+     * Format RAM string using native code.
+     */
+    fun formatRamNative(usedMb: Long, totalMb: Long): String {
+        return if (isLoaded) {
+            runCatching { formatRamString(usedMb, totalMb) }.getOrDefault(String.format("RAM: %d/%d MB", usedMb, totalMb))
+        } else {
+            String.format("RAM: %d/%d MB", usedMb, totalMb)
+        }
+    }
+
+    /**
+     * Format self stats string using native code.
+     */
+    fun formatSelfStatsNative(cpuPercent: Float, ramMb: Long): String {
+        return if (isLoaded) {
+            runCatching { formatSelfStatsString(cpuPercent, ramMb) }.getOrDefault(String.format("Self: %.1f%% / %dM", cpuPercent, ramMb))
+        } else {
+            String.format("Self: %.1f%% / %dM", cpuPercent, ramMb)
         }
     }
 
@@ -104,6 +159,11 @@ object NativeMetrics {
     private external fun getTemperature(): Float
     private external fun isAvailable(): Boolean
     private external fun getCpuCoreCount(): Int
+    private external fun getProcessCpuStats(pid: Int): LongArray?
+    private external fun formatTimeString(hour: Int, minute: Int, use24h: Boolean): String
+    private external fun formatCpuString(cpuPercent: Float): String
+    private external fun formatRamString(usedMb: Long, totalMb: Long): String
+    private external fun formatSelfStatsString(cpuPercent: Float, ramMb: Long): String
 
     /**
      * Data class for memory statistics.
@@ -113,5 +173,14 @@ object NativeMetrics {
         val usedMb: Float,
         val availableMb: Float,
         val usagePercent: Float
+    )
+
+    /**
+     * Data class for process CPU statistics.
+     */
+    data class ProcessCpuData(
+        val utime: Long,
+        val stime: Long,
+        val totalTime: Long
     )
 }

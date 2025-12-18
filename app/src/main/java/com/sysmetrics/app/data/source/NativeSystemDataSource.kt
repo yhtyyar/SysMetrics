@@ -8,8 +8,6 @@ import com.sysmetrics.app.data.model.TemperatureInfo
 import com.sysmetrics.app.native_bridge.NativeMetrics
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Data source that uses native C++ code for high-performance metrics collection.
@@ -17,8 +15,8 @@ import javax.inject.Singleton
  * 
  * Performance improvement: ~5-10x faster for CPU parsing operations.
  */
-@Singleton
-class NativeSystemDataSource @Inject constructor(
+
+class NativeSystemDataSource constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val fallbackDataSource: SystemDataSource
 ) {
@@ -41,7 +39,6 @@ class NativeSystemDataSource @Inject constructor(
             val cpuUsage = NativeMetrics.getCpuUsageNative()
             val memoryData = NativeMetrics.getMemoryStatsNative()
             val temperature = NativeMetrics.getTemperatureNative()
-            val coreCount = NativeMetrics.getCpuCoreCountNative()
 
             // Validate native results
             if (cpuUsage < 0 || memoryData == null) {
@@ -51,7 +48,7 @@ class NativeSystemDataSource @Inject constructor(
 
             SystemMetrics(
                 cpuUsage = cpuUsage,
-                cpuCores = if (coreCount > 0) coreCount else Runtime.getRuntime().availableProcessors(),
+                cpuCores = Runtime.getRuntime().availableProcessors(),
                 ramUsedMb = memoryData.usedMb.toLong(),
                 ramTotalMb = memoryData.totalMb.toLong(),
                 ramUsagePercent = memoryData.usagePercent,

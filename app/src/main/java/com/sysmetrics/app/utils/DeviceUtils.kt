@@ -6,10 +6,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.PowerManager
 import com.sysmetrics.app.core.common.Constants
-import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Utility class for device-specific operations and optimizations.
@@ -20,9 +17,8 @@ import javax.inject.Singleton
  * - Better documentation
  * - Optimized for testability
  */
-@Singleton
-class DeviceUtils @Inject constructor(
-    @ApplicationContext private val context: Context
+class DeviceUtils(
+    private val context: Context
 ) {
     companion object {
         private const val TAG = "DEVICE_UTILS"

@@ -3,13 +3,12 @@ package com.sysmetrics.app.domain.usecase
 import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
 /**
  * Use case for managing overlay configuration and state.
  * Encapsulates the business logic for overlay preferences.
  */
-class ManageOverlayConfigUseCase @Inject constructor(
+class ManageOverlayConfigUseCase(
     private val repository: IPreferencesRepository
 ) {
     /**

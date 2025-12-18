@@ -36,6 +36,8 @@
     <string name="show_cpu">Show CPU</string>
     <string name="show_ram">Show RAM</string>
     <string name="show_temperature">Show Temperature</string>
+    <string name="show_time">Show Time</string>
+    <string name="use_24_hour_format">Use 24-Hour Format</string>
     <string name="save">Save</string>
 
     <!-- Notifications -->

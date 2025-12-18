@@ -2,17 +2,16 @@ package com.sysmetrics.app.utils
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Process
 import com.sysmetrics.app.core.common.Constants
 import com.sysmetrics.app.core.di.DispatcherProvider
+import com.sysmetrics.app.domain.collector.ICpuMetricsCollector
 import com.sysmetrics.app.domain.collector.IProcessStatsCollector
+import java.io.File
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Optimized process statistics collector
@@ -30,12 +29,11 @@ import javax.inject.Singleton
  * - Implements IProcessStatsCollector interface for testability
  * - Uses proper coroutines for async operations
  * - Thread-safe with Mutex for concurrent access
- * - Singleton with Hilt dependency injection
  */
-@Singleton
-class ProcessStatsCollector @Inject constructor(
+class ProcessStatsCollector(
     private val context: Context,
-    private val dispatcherProvider: DispatcherProvider
+    private val dispatcherProvider: DispatcherProvider,
+    private val cpuMetricsCollector: ICpuMetricsCollector
 ) : IProcessStatsCollector {
     
     companion object {
@@ -51,16 +49,26 @@ class ProcessStatsCollector @Inject constructor(
     private val packageManager = context.packageManager
     
     // Thread-safe cache for process stats
-    private val cacheMutex = Mutex()
+    private val cacheMutex = Any()
     private val previousStats = mutableMapOf<Int, ProcessStat>()
     private var previousTotalCpuTime = 0L
 
     /**
      * Get statistics for current app (SysMetrics)
+     * Ensures proper baseline by calling measurement twice if needed
      */
     override suspend fun getSelfStats(): AppStats = withContext(dispatcherProvider.io) {
         val pid = Process.myPid()
         Timber.tag(TAG_CPU).d("🔍 Getting self stats for PID %d", pid)
+        
+        // Check if we have a baseline for this PID
+        if (!previousStats.containsKey(pid)) {
+            Timber.tag(TAG_CPU).d("⏱️ First measurement for self PID %d - establishing baseline", pid)
+            // First measurement - establish baseline
+            calculateCpuUsageForPid(pid) // This will return 0 but store baseline
+            // Small delay for CPU time to accumulate
+            kotlinx.coroutines.delay(100)
+        }
         
         val stats = getStatsForPid(pid, "com.sysmetrics.app")
         
@@ -228,9 +236,45 @@ class ProcessStatsCollector @Inject constructor(
     /**
      * Calculate CPU usage for specific PID (optimized)
      * Uses delta measurement with proper timing for accuracy under load
+     * Priority: Native C++ → Kotlin fallback
      */
     private fun calculateCpuUsageForPid(pid: Int): Float {
         try {
+            // Try Native C++ first (much faster)
+            val nativeStats = cpuMetricsCollector.getProcessCpuStatsNative(pid)
+            if (nativeStats != null) {
+                Timber.tag(TAG_CPU).v("🚀 Native process stats for PID %d: total=%d", pid, nativeStats.totalTime)
+                
+                // Calculate delta with previous measurement
+                val previousStat = previousStats[pid]
+                if (previousStat != null && previousStat.previousTotalCpuTime > 0) {
+                    val timeDelta = nativeStats.totalTime - previousStat.totalTime
+                    val totalDelta = (getTotalCpuTime() - previousStat.previousTotalCpuTime)
+                    
+                    if (totalDelta > 0 && timeDelta >= 0) {
+                        val rawPercent = (timeDelta.toFloat() / totalDelta.toFloat()) * 100f
+                        val capped = rawPercent.coerceIn(0f, 100f)
+                        
+                        if (capped > 0.01f) {
+                            Timber.tag(TAG_CPU).v("📊 PID %d native: timeΔ=%d, totalΔ=%d → %.2f%%",
+                                pid, timeDelta, totalDelta, capped)
+                        }
+                        
+                        // Update cache
+                        previousStats[pid] = ProcessStat(nativeStats.totalTime, getTotalCpuTime())
+                        return capped
+                    }
+                }
+                
+                // First measurement - store baseline
+                previousStats[pid] = ProcessStat(nativeStats.totalTime, getTotalCpuTime())
+                Timber.tag(TAG_CPU).v("⏳ PID %d native baseline stored", pid)
+                return 0f
+            }
+            
+            // Fallback to Kotlin implementation
+            Timber.tag(TAG_CPU).w("⚠️ Native failed for PID %d, using Kotlin fallback", pid)
+
             val statFile = File("/proc/$pid/stat")
             if (!statFile.exists() || !statFile.canRead()) {
                 Timber.tag(TAG_CPU).v("⚠️ PID %d: stat file not accessible", pid)
@@ -239,7 +283,7 @@ class ProcessStatsCollector @Inject constructor(
 
             val statContent = statFile.readText()
             val stats = statContent.split(" ")
-            
+
             if (stats.size < 17) {
                 Timber.tag(TAG_CPU).w("⚠️ PID %d: invalid stat format (size=%d)", pid, stats.size)
                 return 0f
@@ -262,17 +306,18 @@ class ProcessStatsCollector @Inject constructor(
             val cpuPercent = if (previousStat != null && previousStat.previousTotalCpuTime > 0) {
                 val timeDelta = (totalTime - previousStat.totalTime).coerceAtLeast(0L)
                 val totalDelta = (totalCpuTime - previousStat.previousTotalCpuTime).coerceAtLeast(0L)
-                
+
                 if (totalDelta > 0) {
-                    // Optimized calculation for multi-core accuracy
-                    val numCores = Runtime.getRuntime().availableProcessors()
-                    val rawPercent = (timeDelta.toFloat() / totalDelta.toFloat()) * 100f * numCores
-                    // Cap at 100% for single process display
+                    // Calculate CPU percentage: (process_time_delta / total_system_time_delta) * 100
+                    // This gives system-wide percentage (0-100%)
+                    val rawPercent = (timeDelta.toFloat() / totalDelta.toFloat()) * 100f
+
+                    // Cap at 100% (though typically process won't exceed system total)
                     val capped = rawPercent.coerceIn(0f, 100f)
-                    
-                    if (capped > 0.1f) { // Log even small non-zero values for debugging
-                        Timber.tag(TAG_CPU).v("📊 PID %d: timeΔ=%d, totalΔ=%d, cores=%d → %.1f%%",
-                            pid, timeDelta, totalDelta, numCores, capped)
+
+                    if (capped > 0.01f) { // Log even small non-zero values for debugging
+                        Timber.tag(TAG_CPU).v("📊 PID %d kotlin: timeΔ=%d, totalΔ=%d → %.2f%%",
+                            pid, timeDelta, totalDelta, capped)
                     }
                     capped
                 } else {
@@ -281,13 +326,12 @@ class ProcessStatsCollector @Inject constructor(
                 }
             } else {
                 // First measurement - store baseline
-                Timber.tag(TAG_CPU).v("⏳ PID %d: first measurement (baseline)", pid)
+                Timber.tag(TAG_CPU).v("⏳ PID %d: kotlin baseline", pid)
                 0f
             }
 
-            // Update cache for next measurement - FIXED: Store per-PID totalCpuTime
+            // Update cache for next measurement
             previousStats[pid] = ProcessStat(totalTime, totalCpuTime)
-            // Keep global previousTotalCpuTime for baseline initialization compatibility
             previousTotalCpuTime = totalCpuTime
 
             return cpuPercent
@@ -330,7 +374,7 @@ class ProcessStatsCollector @Inject constructor(
      * Initialize baseline for accurate measurement
      */
     override suspend fun initializeBaseline() = withContext(dispatcherProvider.io) {
-        cacheMutex.withLock {
+        synchronized(cacheMutex) {
             Timber.tag(TAG_CPU).d("🔧 Initializing process stats baseline...")
             previousTotalCpuTime = getTotalCpuTime()
             Timber.tag(TAG_CPU).i("✅ Process baseline initialized: totalCpuTime=%d", previousTotalCpuTime)
@@ -346,7 +390,7 @@ class ProcessStatsCollector @Inject constructor(
             val runningApps = activityManager.runningAppProcesses ?: return@withContext
             var cachedCount = 0
             runningApps.forEach { process ->
-                calculateCpuUsageForPid(process.pid)
+                calculateCpuUsageForPid(process.pid.toInt())
                 cachedCount++
             }
             Timber.tag(TAG_CPU).i("✅ Process cache warmed: %d processes", cachedCount)

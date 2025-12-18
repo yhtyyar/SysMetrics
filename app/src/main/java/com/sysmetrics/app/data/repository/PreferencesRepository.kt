@@ -4,15 +4,13 @@ import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Repository for overlay preferences and configuration.
  * Implements [IPreferencesRepository] for proper abstraction.
  */
-@Singleton
-class PreferencesRepository @Inject constructor(
+
+class PreferencesRepository constructor(
     private val preferencesDataSource: PreferencesDataSource
 ) : IPreferencesRepository {
     

@@ -9,20 +9,21 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.View
+import android.widget.TextView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.launch
 import com.sysmetrics.app.R
-import com.sysmetrics.app.core.extensions.hasOverlayPermission
-import com.sysmetrics.app.core.extensions.showToast
+import com.sysmetrics.app.core.common.Constants
+import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.databinding.ActivityMainOverlayBinding
+import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.service.MinimalistOverlayService
 import com.sysmetrics.app.utils.MetricsCollector
-import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * Main Activity - Optimized UX
@@ -31,14 +32,12 @@ import javax.inject.Inject
  * - Clear status messages
  * Temperature monitoring removed for better performance
  */
-@AndroidEntryPoint
+// @AndroidEntryPoint
 class MainActivityOverlay : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainOverlayBinding
+    private lateinit var metricsCollector: MetricsCollector
     private var isOverlayActive = false
-    
-    @Inject
-    lateinit var metricsCollector: MetricsCollector
     
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
@@ -56,6 +55,10 @@ class MainActivityOverlay : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainOverlayBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Initialize dependencies from AppContainer
+        val appContainer = (application as SysMetricsApplication).appContainer
+        metricsCollector = appContainer.metricsCollector
         
         setupUI()
         checkServiceStatus()
@@ -130,7 +133,7 @@ class MainActivityOverlay : AppCompatActivity() {
             Timber.d("Minimalist overlay service started")
         } catch (e: Exception) {
             Timber.e(e, "Failed to start overlay")
-            showToast("Failed to start overlay: ${e.message}")
+            android.widget.Toast.makeText(this, "Failed to start overlay: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -152,7 +155,7 @@ class MainActivityOverlay : AppCompatActivity() {
             Timber.d("Minimalist overlay service stopped")
         } catch (e: Exception) {
             Timber.e(e, "Failed to stop overlay")
-            showToast("Failed to stop overlay: ${e.message}")
+            android.widget.Toast.makeText(this, "Failed to stop overlay: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -290,5 +293,23 @@ class MainActivityOverlay : AppCompatActivity() {
         // TODO: Implement proper service status check
         // For now, assume service is not running on activity start
         updateButtonState(false)
+    }
+
+    /**
+     * Check if overlay permission is granted
+     */
+    private fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
+    }
+
+    /**
+     * Show toast message
+     */
+    private fun showToast(messageResId: Int) {
+        android.widget.Toast.makeText(this, messageResId, android.widget.Toast.LENGTH_SHORT).show()
     }
 }

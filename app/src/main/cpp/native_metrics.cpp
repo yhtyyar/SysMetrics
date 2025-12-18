@@ -131,27 +131,110 @@ int read_memory_stats(MemoryStats* stats) {
 }
 
 /**
- * Reads temperature from specified thermal zone.
- * Returns temperature in Celsius.
+ * Reads CPU stats for specific PID from /proc/pid/stat.
+ * Highly optimized for frequent calls.
  */
-float read_temperature(int zone_index) {
-    char path[128];
-    snprintf(path, sizeof(path), "/sys/class/thermal/thermal_zone%d/temp", zone_index);
+int read_process_cpu_stats(int pid, ProcessCpuStats* stats) {
+    char path[64];
+    snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+
+    FILE* fp = fopen(path, "r");
+    if (!fp) {
+        return -1;
+    }
+
+    // Read only the fields we need: utime (14) and stime (15)
+    // Skip fields 1-13, then read utime and stime
+    char comm[256]; // comm field can contain spaces and parentheses
+    int pid_check;
+    char state;
+    int ppid, pgrp, session, tty_nr, tpgid;
+    unsigned flags;
+    unsigned long minflt, cminflt, majflt, cmajflt;
+    unsigned long utime, stime;
+
+    int result = fscanf(fp, "%d %255s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
+                       &pid_check, comm, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid,
+                       &flags, &minflt, &cminflt, &majflt, &cmajflt, &utime, &stime);
+
+    fclose(fp);
+
+    if (result < 15) {
+        LOGE("Failed to parse /proc/%d/stat, got %d values", pid, result);
+        return -1;
+    }
+
+    stats->utime = (long)utime;
+    stats->stime = (long)stime;
+    stats->total_time = stats->utime + stats->stime;
+
+    return 0;
+}
+
+/**
+ * Optimized time string formatting.
+ */
+int format_time_string(char* buffer, int buffer_size, int hour, int minute, bool use_24h) {
+    if (use_24h) {
+        return snprintf(buffer, buffer_size, "%02d:%02d", hour, minute);
+    } else {
+        const char* am_pm = (hour >= 12) ? "PM" : "AM";
+        int display_hour = hour % 12;
+        if (display_hour == 0) display_hour = 12;
+        return snprintf(buffer, buffer_size, "%d:%02d %s", display_hour, minute, am_pm);
+    }
+}
+
+/**
+ * Format CPU usage string.
+ */
+int format_cpu_string(char* buffer, int buffer_size, float cpu_percent) {
+    if (cpu_percent >= 10.0f) {
+        return snprintf(buffer, buffer_size, "CPU: %.0f%%", cpu_percent);
+    } else if (cpu_percent >= 1.0f) {
+        return snprintf(buffer, buffer_size, "CPU: %.1f%%", cpu_percent);
+    } else if (cpu_percent >= 0.1f) {
+        return snprintf(buffer, buffer_size, "CPU: %.2f%%", cpu_percent);
+    } else {
+        return snprintf(buffer, buffer_size, "CPU: %.1f%%", cpu_percent);
+    }
+}
+
+/**
+ * Format RAM usage string.
+ */
+int format_ram_string(char* buffer, int buffer_size, long used_mb, long total_mb) {
+    return snprintf(buffer, buffer_size, "RAM: %ld/%ld MB", used_mb, total_mb);
+}
+
+/**
+ * Format self stats string.
+ */
+int format_self_stats_string(char* buffer, int buffer_size, float cpu_percent, long ram_mb) {
+    return snprintf(buffer, buffer_size, "Self: %.1f%% / %ldM", cpu_percent, ram_mb);
+}
+
+/**
+ * Read temperature from thermal zone.
+ * Returns temperature in Celsius, or -1 if unavailable.
+ */
+float read_temperature(int zone) {
+    char path[64];
+    snprintf(path, sizeof(path), "/sys/class/thermal/thermal_zone%d/temp", zone);
 
     FILE* fp = fopen(path, "r");
     if (!fp) {
         return -1.0f;
     }
 
-    long millidegrees = 0;
-    int result = fscanf(fp, "%ld", &millidegrees);
-    fclose(fp);
-
-    if (result != 1) {
+    int temp_millidegrees;
+    if (fscanf(fp, "%d", &temp_millidegrees) != 1) {
+        fclose(fp);
         return -1.0f;
     }
 
-    return (float)millidegrees / 1000.0f;
+    fclose(fp);
+    return (float)temp_millidegrees / 1000.0f;
 }
 
 // ============================================================================
@@ -252,26 +335,68 @@ Java_com_sysmetrics_app_native_1bridge_NativeMetrics_isAvailable(JNIEnv* env, jo
 }
 
 /**
- * Get number of CPU cores.
+ * Get CPU stats for specific PID.
+ * Returns array: [utime, stime, total_time] or null if failed.
  */
-JNIEXPORT jint JNICALL
-Java_com_sysmetrics_app_native_1bridge_NativeMetrics_getCpuCoreCount(JNIEnv* env, jobject thiz) {
-    FILE* fp = fopen("/proc/cpuinfo", "r");
-    if (!fp) {
-        return -1;
+JNIEXPORT jlongArray JNICALL
+Java_com_sysmetrics_app_native_1bridge_NativeMetrics_getProcessCpuStats(JNIEnv* env, jobject thiz, jint pid) {
+    ProcessCpuStats stats;
+
+    if (read_process_cpu_stats(pid, &stats) != 0) {
+        return nullptr;
     }
 
-    int count = 0;
-    char line[256];
-
-    while (fgets(line, sizeof(line), fp)) {
-        if (strncmp(line, "processor", 9) == 0) {
-            count++;
-        }
+    jlongArray result = env->NewLongArray(3);
+    if (!result) {
+        return nullptr;
     }
 
-    fclose(fp);
-    return count > 0 ? count : 1;
+    jlong values[3] = {stats.utime, stats.stime, stats.total_time};
+    env->SetLongArrayRegion(result, 0, 3, values);
+    return result;
 }
 
-} // extern "C"
+/**
+ * Format time string natively.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_sysmetrics_app_native_1bridge_NativeMetrics_formatTimeString(JNIEnv* env, jobject thiz,
+                                                                     jint hour, jint minute, jboolean use24h) {
+    char buffer[16];
+    int len = format_time_string(buffer, sizeof(buffer), hour, minute, use24h);
+    return env->NewStringUTF(buffer);
+}
+
+/**
+ * Format CPU string natively.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_sysmetrics_app_native_1bridge_NativeMetrics_formatCpuString(JNIEnv* env, jobject thiz, jfloat cpuPercent) {
+    char buffer[32];
+    format_cpu_string(buffer, sizeof(buffer), cpuPercent);
+    return env->NewStringUTF(buffer);
+}
+
+/**
+ * Format RAM string natively.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_sysmetrics_app_native_1bridge_NativeMetrics_formatRamString(JNIEnv* env, jobject thiz,
+                                                                    jlong usedMb, jlong totalMb) {
+    char buffer[32];
+    format_ram_string(buffer, sizeof(buffer), usedMb, totalMb);
+    return env->NewStringUTF(buffer);
+}
+
+/**
+ * Format self stats string natively.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_sysmetrics_app_native_1bridge_NativeMetrics_formatSelfStatsString(JNIEnv* env, jobject thiz,
+                                                                          jfloat cpuPercent, jlong ramMb) {
+    char buffer[32];
+    format_self_stats_string(buffer, sizeof(buffer), cpuPercent, ramMb);
+    return env->NewStringUTF(buffer);
+}
+
+}

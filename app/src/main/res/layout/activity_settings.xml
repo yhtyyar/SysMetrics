@@ -131,6 +131,16 @@
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/show_time"
+                android:textColor="@color/text_primary"
+                android:checked="true"
+                app:thumbTint="@color/accent"
+                app:trackTint="@color/text_hint" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"

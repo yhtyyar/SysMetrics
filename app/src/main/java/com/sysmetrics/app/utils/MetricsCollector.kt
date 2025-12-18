@@ -8,8 +8,6 @@ import com.sysmetrics.app.domain.collector.IMetricsCollector
 import com.sysmetrics.app.native_bridge.NativeMetrics
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Optimized metrics collector - production ready
@@ -28,8 +26,7 @@ import javax.inject.Singleton
  * - Singleton with Hilt dependency injection
  * - Thread-safe operations with Mutex
  */
-@Singleton
-class MetricsCollector @Inject constructor(
+class MetricsCollector(
     private val context: Context,
     private val systemDataSource: SystemDataSource,
     private val dispatcherProvider: DispatcherProvider

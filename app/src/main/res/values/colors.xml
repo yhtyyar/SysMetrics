@@ -53,7 +53,7 @@
     <color name="button_toggle_on">#1B5E20</color>         <!-- On state (dark green) -->
 
     <!-- Overlay (for floating widgets) -->
-    <color name="overlay_background">#E6121212</color>     <!-- 90% opacity -->
+    <color name="overlay_background">#CC121212</color>     <!-- 80% opacity - more transparent -->
     <color name="overlay_border">#404040</color>
 
     <!-- Transparent -->
