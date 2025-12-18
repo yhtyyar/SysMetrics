@@ -8,15 +8,24 @@
 
 # Keep application class
 -keep class com.sysmetrics.app.SysMetricsApp { *; }
+-keep class com.sysmetrics.app.core.SysMetricsApplication { *; }
 
 # Keep data models (for serialization)
 -keep class com.sysmetrics.app.data.model.** { *; }
 -keep class com.sysmetrics.app.domain.model.** { *; }
 
-# Keep native methods
+# Keep native bridge classes and methods
+-keep class com.sysmetrics.app.native_bridge.** { *; }
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+-keepclasseswithmembers class * {
+    native <methods>;
+}
+
+# Keep JNI interfaces
+-keep interface com.sysmetrics.app.domain.collector.** { *; }
+-keep interface com.sysmetrics.app.domain.formatter.** { *; }
 
 # Keep services
 -keep class * extends android.app.Service
@@ -25,11 +34,9 @@
 # Keep broadcast receivers
 -keep class * extends android.content.BroadcastReceiver
 
-# Hilt DI
--keep class dagger.hilt.** { *; }
--keep class javax.inject.** { *; }
--keep class * extends dagger.hilt.android.internal.managers.ComponentSupplier { *; }
--keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }
+# Manual DI (AppContainer)
+-keep class com.sysmetrics.app.core.di.AppContainer { *; }
+-keep class com.sysmetrics.app.core.di.DispatcherProvider { *; }
 
 # Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}

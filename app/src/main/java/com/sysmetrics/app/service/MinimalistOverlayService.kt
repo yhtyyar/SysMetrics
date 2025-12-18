@@ -71,6 +71,7 @@ class MinimalistOverlayService : LifecycleService() {
     private lateinit var metricsCollector: IMetricsCollector
     private lateinit var processStatsCollector: IProcessStatsCollector
     private lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
+    private lateinit var batteryAwareMonitor: com.sysmetrics.app.utils.BatteryAwareMonitor
     private lateinit var preferencesDataSource: PreferencesDataSource
     private lateinit var stringFormatter: IStringFormatter
 
@@ -124,6 +125,7 @@ class MinimalistOverlayService : LifecycleService() {
         // Create data sources directly (they are private in AppContainer)
         systemDataSource = SystemDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
         preferencesDataSource = PreferencesDataSource(this)
+        batteryAwareMonitor = com.sysmetrics.app.utils.BatteryAwareMonitor(this)
         
         // Setup exception handler for TV-specific crashes
         setupExceptionHandler()
@@ -600,12 +602,22 @@ class MinimalistOverlayService : LifecycleService() {
                 ramUsagePercent = ramPercent
             )
             
-            // Calculate optimal interval
-            val optimalInterval = adaptiveMonitor.calculateOptimalInterval(
+            // Calculate optimal interval based on system load
+            var optimalInterval = adaptiveMonitor.calculateOptimalInterval(
                 metrics = metrics,
                 isTvDevice = deviceUtils.isTvDevice(),
                 preferredInterval = Constants.OverlayService.UPDATE_INTERVAL_MS
             )
+            
+            // Battery-aware optimization: Adjust interval based on battery level
+            val batteryOptimalInterval = batteryAwareMonitor.getOptimalInterval()
+            if (batteryOptimalInterval > optimalInterval) {
+                val batteryStatus = batteryAwareMonitor.getBatteryStatus()
+                Timber.tag(TAG_SERVICE).d(
+                    "🔋 Battery-aware: Using battery interval ${batteryOptimalInterval}ms (Battery: ${batteryStatus.level}%)"
+                )
+                optimalInterval = batteryOptimalInterval
+            }
                 
                 // Apply new interval if changed significantly
                 if (optimalInterval != currentUpdateInterval) {

@@ -34,6 +34,8 @@
         android:textStyle="bold"
         android:visibility="visible"
         android:layout_marginBottom="8dp"
+        android:contentDescription="Current time"
+        android:importantForAccessibility="yes"
         tools:text="14:35" />
 
     <!-- CPU -->
@@ -46,6 +48,8 @@
         android:textColor="@color/text_primary"
         android:fontFamily="monospace"
         android:layout_marginBottom="3dp"
+        android:contentDescription="CPU usage"
+        android:importantForAccessibility="yes"
         tools:text="CPU: 48%" />
 
     <!-- RAM -->
@@ -58,6 +62,8 @@
         android:textColor="@color/text_primary"
         android:fontFamily="monospace"
         android:layout_marginBottom="6dp"
+        android:contentDescription="Memory usage"
+        android:importantForAccessibility="yes"
         tools:text="RAM: 1250/1699 MB" />
 
     <!-- Divider -->
