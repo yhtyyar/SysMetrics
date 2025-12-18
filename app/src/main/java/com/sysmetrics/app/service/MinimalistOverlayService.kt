@@ -345,6 +345,8 @@ class MinimalistOverlayService : LifecycleService() {
     /**
      * Create WindowManager.LayoutParams for overlay
      * TV-specific flags to prevent hover event crashes
+     * 
+     * Initial position will be set by updateOverlayPosition() after view is added
      */
     private fun createLayoutParams(): WindowManager.LayoutParams {
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -380,6 +382,8 @@ class MinimalistOverlayService : LifecycleService() {
             
             width = WindowManager.LayoutParams.WRAP_CONTENT
             height = WindowManager.LayoutParams.WRAP_CONTENT
+            
+            // Initial position - will be updated by updateOverlayPosition()
             gravity = Gravity.TOP or Gravity.START
             x = margin
             y = margin
@@ -429,40 +433,53 @@ class MinimalistOverlayService : LifecycleService() {
     /**
      * Update overlay position based on configuration.
      * Applies changes in real-time when settings are changed.
+     * 
+     * Uses proper Gravity-based positioning for WindowManager:
+     * - x, y are offsets from the gravity point (not absolute coordinates)
+     * - Positive values move away from edges, negative values move toward edges
      */
     private fun updateOverlayPosition(config: com.sysmetrics.app.data.model.OverlayConfig) {
         try {
-            // Use custom position if available, otherwise use predefined position
-            val (newX, newY) = when {
-                // If custom coordinates are set (from dragging), use them
-                config.positionX != 20 || config.positionY != 20 -> {
-                    Pair(config.positionX, config.positionY)
-                }
-                // Otherwise use predefined position
-                else -> {
-                    val margin = dpToPx(deviceUtils.getOverlayMargin())
-                    val displayMetrics = resources.displayMetrics
-                    when (config.position) {
-                        com.sysmetrics.app.data.model.OverlayPosition.TOP_LEFT -> Pair(margin, margin)
-                        com.sysmetrics.app.data.model.OverlayPosition.TOP_RIGHT -> 
-                            Pair(displayMetrics.widthPixels - overlayView.width - margin, margin)
-                        com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_LEFT -> 
-                            Pair(margin, displayMetrics.heightPixels - overlayView.height - margin)
-                        com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_RIGHT -> 
-                            Pair(displayMetrics.widthPixels - overlayView.width - margin,
-                                displayMetrics.heightPixels - overlayView.height - margin)
+            val margin = dpToPx(deviceUtils.getOverlayMargin())
+            
+            // Check if custom position (from dragging)
+            val isCustomPosition = config.positionX != 20 || config.positionY != 20
+            
+            if (isCustomPosition) {
+                // Custom dragged position - use TOP|START gravity with absolute coordinates
+                layoutParams.gravity = Gravity.TOP or Gravity.START
+                layoutParams.x = config.positionX
+                layoutParams.y = config.positionY
+            } else {
+                // Predefined position - use appropriate gravity for each corner
+                when (config.position) {
+                    com.sysmetrics.app.data.model.OverlayPosition.TOP_LEFT -> {
+                        layoutParams.gravity = Gravity.TOP or Gravity.START
+                        layoutParams.x = margin
+                        layoutParams.y = margin
+                    }
+                    com.sysmetrics.app.data.model.OverlayPosition.TOP_RIGHT -> {
+                        layoutParams.gravity = Gravity.TOP or Gravity.END
+                        layoutParams.x = margin  // Offset from RIGHT edge
+                        layoutParams.y = margin
+                    }
+                    com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_LEFT -> {
+                        layoutParams.gravity = Gravity.BOTTOM or Gravity.START
+                        layoutParams.x = margin
+                        layoutParams.y = margin  // Offset from BOTTOM edge
+                    }
+                    com.sysmetrics.app.data.model.OverlayPosition.BOTTOM_RIGHT -> {
+                        layoutParams.gravity = Gravity.BOTTOM or Gravity.END
+                        layoutParams.x = margin  // Offset from RIGHT edge
+                        layoutParams.y = margin  // Offset from BOTTOM edge
                     }
                 }
             }
             
-            // Update layout params
-            layoutParams.x = newX
-            layoutParams.y = newY
-            
             // Apply changes
             windowManager.updateViewLayout(overlayView, layoutParams)
             
-            Timber.tag(TAG_SERVICE).d("📍 Overlay position updated to: ($newX, $newY)")
+            Timber.tag(TAG_SERVICE).d("📍 Overlay position updated: gravity=${layoutParams.gravity}, x=${layoutParams.x}, y=${layoutParams.y}")
         } catch (e: Exception) {
             Timber.tag(TAG_SERVICE).e(e, "Failed to update overlay position")
         }
