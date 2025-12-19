@@ -1,5 +1,6 @@
 package com.sysmetrics.app.data.source.network
 
+import android.net.TrafficStats
 import com.sysmetrics.app.core.di.DispatcherProvider
 import com.sysmetrics.app.data.model.network.InterfaceStats
 import com.sysmetrics.app.data.model.network.NetworkSnapshot
@@ -68,22 +69,25 @@ class NetworkStatsDataSource(
 
     /**
      * Reads current network traffic statistics.
-     * Calculates speed based on delta from previous snapshot.
+     * Uses TrafficStats API (reliable on all Android versions) with /proc/net/dev as fallback.
      *
      * @return [NetworkTrafficStats] with current speeds and totals
      */
     suspend fun readNetworkStats(): NetworkTrafficStats = withContext(dispatcherProvider.io) {
         try {
-            val currentSnapshot = readProcNetDev()
+            // Use TrafficStats API - works reliably on all Android versions
+            val currentSnapshot = readTrafficStats()
             val currentTime = currentSnapshot.timestamp
 
             if (!isInitialized) {
                 initializeBaseline(currentSnapshot)
+                Timber.tag(TAG).d("Baseline initialized: RX=${currentSnapshot.totalRxBytes}, TX=${currentSnapshot.totalTxBytes}")
                 return@withContext createInitialStats(currentSnapshot)
             }
 
             val timeDeltaMs = currentTime - previousSnapshot.timestamp
             if (timeDeltaMs < MIN_TIME_DELTA_MS) {
+                Timber.tag(TAG).v("Time delta too small: ${timeDeltaMs}ms")
                 return@withContext createStats(0L, 0L, currentSnapshot)
             }
 
@@ -97,6 +101,11 @@ class NetworkStatsDataSource(
             val ingressMbps = ingressBytesPerSec * BYTES_TO_MBPS
             val egressMbps = egressBytesPerSec * BYTES_TO_MBPS
 
+            // Debug logging
+            if (rxDelta > 0 || txDelta > 0) {
+                Timber.tag(TAG).d("Traffic: RX delta=${rxDelta}B, TX delta=${txDelta}B, time=${timeDeltaMs}ms")
+            }
+
             updatePeakValues(ingressMbps, egressMbps, currentTime)
             previousSnapshot = currentSnapshot
 
@@ -105,6 +114,73 @@ class NetworkStatsDataSource(
             Timber.tag(TAG).e(e, "Error reading network stats")
             NetworkTrafficStats.EMPTY
         }
+    }
+    
+    /**
+     * Reads network stats using Android TrafficStats API.
+     * This is the most reliable method on modern Android versions.
+     */
+    private fun readTrafficStats(): NetworkSnapshot {
+        val timestamp = System.currentTimeMillis()
+        
+        // Get total device traffic (all interfaces combined)
+        val totalRxBytes = TrafficStats.getTotalRxBytes()
+        val totalTxBytes = TrafficStats.getTotalTxBytes()
+        
+        // Check if TrafficStats is supported
+        if (totalRxBytes == TrafficStats.UNSUPPORTED.toLong() || 
+            totalTxBytes == TrafficStats.UNSUPPORTED.toLong()) {
+            Timber.tag(TAG).w("TrafficStats not supported, falling back to /proc/net/dev")
+            return readProcNetDev()
+        }
+        
+        // Get mobile-specific traffic for breakdown
+        val mobileRxBytes = TrafficStats.getMobileRxBytes()
+        val mobileTxBytes = TrafficStats.getMobileTxBytes()
+        
+        // Calculate WiFi traffic (total - mobile)
+        val wifiRxBytes = totalRxBytes - mobileRxBytes
+        val wifiTxBytes = totalTxBytes - mobileTxBytes
+        
+        // Create interface stats for reporting
+        val interfaces = mutableMapOf<String, InterfaceStats>()
+        
+        if (mobileRxBytes > 0 || mobileTxBytes > 0) {
+            interfaces["mobile"] = InterfaceStats(
+                interfaceName = "mobile",
+                rxBytes = mobileRxBytes,
+                txBytes = mobileTxBytes,
+                rxPackets = 0L,
+                txPackets = 0L,
+                rxErrors = 0L,
+                txErrors = 0L,
+                rxDropped = 0L,
+                txDropped = 0L,
+                timestamp = timestamp
+            )
+        }
+        
+        if (wifiRxBytes > 0 || wifiTxBytes > 0) {
+            interfaces["wifi"] = InterfaceStats(
+                interfaceName = "wifi",
+                rxBytes = wifiRxBytes,
+                txBytes = wifiTxBytes,
+                rxPackets = 0L,
+                txPackets = 0L,
+                rxErrors = 0L,
+                txErrors = 0L,
+                rxDropped = 0L,
+                txDropped = 0L,
+                timestamp = timestamp
+            )
+        }
+        
+        return NetworkSnapshot(
+            interfaces = interfaces,
+            totalRxBytes = totalRxBytes,
+            totalTxBytes = totalTxBytes,
+            timestamp = timestamp
+        )
     }
 
     /**
