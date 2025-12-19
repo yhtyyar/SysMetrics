@@ -26,6 +26,7 @@ import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.core.common.Constants
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.data.source.network.NetworkStatsDataSource
 import com.sysmetrics.app.domain.collector.IMetricsCollector
 import com.sysmetrics.app.domain.collector.IProcessStatsCollector
 import com.sysmetrics.app.domain.formatter.IStringFormatter
@@ -101,8 +102,12 @@ class MinimalistOverlayService : LifecycleService() {
     // View references
     private lateinit var cpuText: TextView
     private lateinit var ramText: TextView
+    private lateinit var networkText: TextView
     private lateinit var selfStatsText: TextView
     private lateinit var timeText: TextView
+    
+    // Network data source
+    private lateinit var networkStatsDataSource: NetworkStatsDataSource
 
     private var currentConfig: com.sysmetrics.app.data.model.OverlayConfig = com.sysmetrics.app.data.model.OverlayConfig.DEFAULT
     private var isBaselineInitialized = false
@@ -126,6 +131,7 @@ class MinimalistOverlayService : LifecycleService() {
         systemDataSource = SystemDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
         preferencesDataSource = PreferencesDataSource(this)
         batteryAwareMonitor = com.sysmetrics.app.utils.BatteryAwareMonitor(this)
+        networkStatsDataSource = NetworkStatsDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
         
         // Setup exception handler for TV-specific crashes
         setupExceptionHandler()
@@ -318,12 +324,13 @@ class MinimalistOverlayService : LifecycleService() {
             // Get view references
             cpuText = overlayView.findViewById(R.id.cpu_text)
             ramText = overlayView.findViewById(R.id.ram_text)
+            networkText = overlayView.findViewById(R.id.network_text)
             selfStatsText = overlayView.findViewById(R.id.self_stats_text)
             timeText = overlayView.findViewById(R.id.time_text)
 
             // Verify all views are found and log status
-            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Self=%b, Time=%b",
-                ::cpuText.isInitialized, ::ramText.isInitialized,
+            Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Net=%b, Self=%b, Time=%b",
+                ::cpuText.isInitialized, ::ramText.isInitialized, ::networkText.isInitialized,
                 ::selfStatsText.isInitialized, ::timeText.isInitialized)
             
             // Load config and apply visibility
@@ -507,12 +514,17 @@ class MinimalistOverlayService : LifecycleService() {
                 // System metrics
                 val cpuPercent = metricsCollector.getCpuUsage()
                 val (usedMb, totalMb, ramPercent) = metricsCollector.getRamUsage()
+                
+                // Network metrics
+                val networkStats = networkStatsDataSource.readNetworkStats()
 
-                Timber.tag(TAG_UPDATE).d("📊 Metrics collected: CPU=%.2f%%, RAM=%d/%dMB (%.1f%%)",
-                    cpuPercent, usedMb, totalMb, ramPercent)
+                Timber.tag(TAG_UPDATE).d("📊 Metrics collected: CPU=%.2f%%, RAM=%d/%dMB (%.1f%%), Net=↓%.1fM ↑%.1fM",
+                    cpuPercent, usedMb, totalMb, ramPercent, 
+                    networkStats.ingressBytesPerSec / 1024f / 1024f,
+                    networkStats.egressBytesPerSec / 1024f / 1024f)
 
                 // Update UI on main thread
-                updateUI(cpuPercent, usedMb, totalMb, ramPercent)
+                updateUI(cpuPercent, usedMb, totalMb, ramPercent, networkStats)
                 
                 val duration = System.currentTimeMillis() - startTime
                 Timber.tag(TAG_UPDATE).v("✅ Update cycle completed in %dms", duration)
@@ -529,7 +541,8 @@ class MinimalistOverlayService : LifecycleService() {
         }
     }
     
-    private suspend fun updateUI(cpuPercent: Float, usedMb: Long, totalMb: Long, ramPercent: Float) {
+    private suspend fun updateUI(cpuPercent: Float, usedMb: Long, totalMb: Long, ramPercent: Float, 
+                                  networkStats: com.sysmetrics.app.data.model.network.NetworkTrafficStats) {
         // Update CPU with color indicator - use optimized string formatting
         val cpuDisplay = stringFormatter.formatCpu(cpuPercent)
         cpuText.text = cpuDisplay
@@ -548,6 +561,11 @@ class MinimalistOverlayService : LifecycleService() {
         ramText.setTextColor(getColorForValue(ramPercent))
 
         Timber.tag(TAG_DISPLAY).d("📺 RAM on SCREEN: '%s' (%.1f%%)", ramDisplay, ramPercent)
+        
+        // Update Network traffic
+        val networkDisplay = formatNetworkSpeed(networkStats.ingressBytesPerSec, networkStats.egressBytesPerSec)
+        networkText.text = networkDisplay
+        Timber.tag(TAG_DISPLAY).d("📺 NET on SCREEN: '%s'", networkDisplay)
 
         // SysMetrics self stats with color (compact format) - use optimized string formatting
         val selfStats = processStatsCollector.getSelfStats()
@@ -576,6 +594,24 @@ class MinimalistOverlayService : LifecycleService() {
             percent < Constants.PerformanceThresholds.CPU_NORMAL_MAX -> getColor(R.color.metric_normal)  // Green
             percent < Constants.PerformanceThresholds.CPU_WARNING_MAX -> getColor(R.color.metric_warning)  // Yellow/Orange
             else -> getColor(R.color.metric_error)  // Red
+        }
+    }
+    
+    /**
+     * Format network speed for display
+     * Shows ingress (↓) and egress (↑) in appropriate units
+     */
+    private fun formatNetworkSpeed(ingressBytesPerSec: Long, egressBytesPerSec: Long): String {
+        val ingressStr = formatBytesPerSec(ingressBytesPerSec)
+        val egressStr = formatBytesPerSec(egressBytesPerSec)
+        return "↓$ingressStr ↑$egressStr"
+    }
+    
+    private fun formatBytesPerSec(bytesPerSec: Long): String {
+        return when {
+            bytesPerSec < 1024 -> "${bytesPerSec}B"
+            bytesPerSec < 1024 * 1024 -> String.format("%.1fK", bytesPerSec / 1024f)
+            else -> String.format("%.1fM", bytesPerSec / 1024f / 1024f)
         }
     }
     

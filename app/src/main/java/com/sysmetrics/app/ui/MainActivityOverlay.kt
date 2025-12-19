@@ -21,6 +21,9 @@ import com.sysmetrics.app.databinding.ActivityMainOverlayBinding
 import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.service.MinimalistOverlayService
 import com.sysmetrics.app.utils.MetricsCollector
+import com.sysmetrics.app.data.source.network.NetworkStatsDataSource
+import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.core.di.DefaultDispatcherProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -37,6 +40,8 @@ class MainActivityOverlay : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainOverlayBinding
     private lateinit var metricsCollector: MetricsCollector
+    private lateinit var networkStatsDataSource: NetworkStatsDataSource
+    private lateinit var systemDataSource: SystemDataSource
     private var isOverlayActive = false
     
     private val handler = Handler(Looper.getMainLooper())
@@ -59,6 +64,11 @@ class MainActivityOverlay : AppCompatActivity() {
         // Initialize dependencies from AppContainer
         val appContainer = (application as SysMetricsApplication).appContainer
         metricsCollector = appContainer.metricsCollector
+        
+        // Initialize data sources
+        val dispatcherProvider = DefaultDispatcherProvider()
+        networkStatsDataSource = NetworkStatsDataSource(dispatcherProvider)
+        systemDataSource = SystemDataSource(dispatcherProvider)
         
         setupUI()
         checkServiceStatus()
@@ -219,9 +229,53 @@ class MainActivityOverlay : AppCompatActivity() {
                 val (usedMb, totalMb, ramPercent) = metricsCollector.getRamUsage()
                 tvRamPreview.text = String.format("%d / %d MB", usedMb, totalMb)
                 tvRamPreview.setTextColor(getColorForValue(ramPercent))
+                
+                // Temperature
+                val tempInfo = systemDataSource.readTemperature()
+                if (tempInfo.cpuTempCelsius > 0) {
+                    tvTempPreview.text = String.format("%.0f°C", tempInfo.cpuTempCelsius)
+                    tvTempPreview.setTextColor(getColorForTemperature(tempInfo.cpuTempCelsius))
+                } else {
+                    tvTempPreview.text = "N/A"
+                    tvTempPreview.setTextColor(getColor(R.color.text_tertiary))
+                }
+                
+                // Network
+                val networkStats = networkStatsDataSource.readNetworkStats()
+                val networkDisplay = formatNetworkSpeed(networkStats.ingressBytesPerSec, networkStats.egressBytesPerSec)
+                tvNetworkPreview.text = networkDisplay
+                tvNetworkPreview.setTextColor(getColor(R.color.metric_success))
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to update metrics preview")
+        }
+    }
+    
+    /**
+     * Format network speed for display
+     */
+    private fun formatNetworkSpeed(ingressBytesPerSec: Long, egressBytesPerSec: Long): String {
+        val ingressStr = formatBytesPerSec(ingressBytesPerSec)
+        val egressStr = formatBytesPerSec(egressBytesPerSec)
+        return "↓$ingressStr ↑$egressStr"
+    }
+    
+    private fun formatBytesPerSec(bytesPerSec: Long): String {
+        return when {
+            bytesPerSec < 1024 -> "${bytesPerSec}B"
+            bytesPerSec < 1024 * 1024 -> String.format("%.1fK", bytesPerSec / 1024f)
+            else -> String.format("%.1fM", bytesPerSec / 1024f / 1024f)
+        }
+    }
+    
+    /**
+     * Get color based on temperature value
+     */
+    private fun getColorForTemperature(tempCelsius: Float): Int {
+        return when {
+            tempCelsius < 45 -> getColor(R.color.metric_success)   // Green - cool
+            tempCelsius < 60 -> getColor(R.color.metric_warning)   // Yellow - warm
+            else -> getColor(R.color.metric_error)                  // Red - hot
         }
     }
 

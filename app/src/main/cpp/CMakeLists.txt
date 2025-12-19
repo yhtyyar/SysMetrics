@@ -12,6 +12,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -DNDEBUG
 # Create shared library
 add_library(sysmetrics_native SHARED
     native_metrics.cpp
+    native_network_stats.cpp
 )
 
 # Find required libraries
