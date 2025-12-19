@@ -61,10 +61,24 @@
         android:textSize="12sp"
         android:textColor="@color/text_primary"
         android:fontFamily="monospace"
-        android:layout_marginBottom="6dp"
+        android:layout_marginBottom="3dp"
         android:contentDescription="Memory usage"
         android:importantForAccessibility="yes"
         tools:text="RAM: 1250/1699 MB" />
+
+    <!-- Network Traffic -->
+    <TextView
+        android:id="@+id/network_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="↓0 ↑0"
+        android:textSize="12sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="6dp"
+        android:contentDescription="Network traffic"
+        android:importantForAccessibility="yes"
+        tools:text="↓2.5M ↑0.8M" />
 
     <!-- Divider -->
     <View

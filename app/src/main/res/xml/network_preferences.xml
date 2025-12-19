@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="Display Settings"
+        android:key="category_display">
+
+        <ListPreference
+            android:key="network_display_mode"
+            android:title="Display Mode"
+            android:summary="Choose overlay display format"
+            android:defaultValue="COMPACT"
+            android:dialogTitle="Select Display Mode" />
+
+        <ListPreference
+            android:key="network_update_interval"
+            android:title="Update Interval"
+            android:summary="How often to refresh network stats"
+            android:defaultValue="1000"
+            android:dialogTitle="Select Update Interval" />
+
+        <SwitchPreferenceCompat
+            android:key="network_use_native"
+            android:title="Use Native Implementation"
+            android:summary="Enable optimized C++ parsing (recommended)"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Alerts"
+        android:key="category_alerts">
+
+        <SwitchPreferenceCompat
+            android:key="network_alerts_enabled"
+            android:title="Enable Alerts"
+            android:summary="Get notified about high traffic or quota usage"
+            android:defaultValue="false" />
+
+        <SeekBarPreference
+            android:key="network_high_speed_threshold"
+            android:title="High Speed Alert Threshold"
+            android:summary="Alert when speed exceeds this value (Mbps)"
+            android:defaultValue="100"
+            app:min="10"
+            android:max="500"
+            app:showSeekBarValue="true"
+            android:dependency="network_alerts_enabled" />
+
+        <SwitchPreferenceCompat
+            android:key="network_anomaly_detection"
+            android:title="Anomaly Detection"
+            android:summary="Detect unusual traffic patterns"
+            android:defaultValue="false"
+            android:dependency="network_alerts_enabled" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Data Quota"
+        android:key="category_quota">
+
+        <EditTextPreference
+            android:key="network_daily_quota"
+            android:title="Daily Data Quota (MB)"
+            android:summary="Set daily data limit (0 = unlimited)"
+            android:defaultValue="0"
+            android:inputType="number" />
+
+        <SeekBarPreference
+            android:key="network_quota_warning"
+            android:title="Quota Warning Percentage"
+            android:summary="Warn when reaching this percentage of quota"
+            android:defaultValue="80"
+            app:min="50"
+            android:max="95"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Actions"
+        android:key="category_actions">
+
+        <Preference
+            android:key="network_reset_baseline"
+            android:title="Reset Baseline"
+            android:summary="Reset peak values and session counters" />
+
+        <Preference
+            android:key="network_clear_cache"
+            android:title="Clear Cache"
+            android:summary="Clear cached app information" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
