@@ -5,13 +5,14 @@ import com.sysmetrics.app.data.model.OverlayPosition
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
 
 /**
  * Unit tests for ManageOverlayConfigUseCase.
@@ -43,7 +44,7 @@ class ManageOverlayConfigUseCaseTest {
     @Test
     fun `observeConfig should return config flow from repository`() = runTest {
         // Given
-        coEvery { repository.getOverlayConfig() } returns flowOf(testConfig)
+        every { repository.overlayConfig } returns flowOf(testConfig)
 
         // When
         val result = useCase.observeConfig().first()
@@ -58,38 +59,36 @@ class ManageOverlayConfigUseCaseTest {
         useCase.saveConfig(testConfig)
 
         // Then
-        coVerify { repository.saveOverlayConfig(testConfig) }
+        coVerify { repository.saveConfig(testConfig) }
     }
 
     @Test
-    fun `updatePosition should save config with new position`() = runTest {
-        // Given
-        coEvery { repository.getOverlayConfig() } returns flowOf(testConfig)
-
+    fun `updatePosition should delegate to repository`() = runTest {
         // When
-        useCase.updatePosition(OverlayPosition.BOTTOM_LEFT)
+        useCase.updatePosition(150, 250)
 
         // Then
-        coVerify { 
-            repository.saveOverlayConfig(
-                match { it.position == OverlayPosition.BOTTOM_LEFT }
-            )
-        }
+        coVerify { repository.updatePosition(150, 250) }
     }
 
     @Test
-    fun `toggleMetric should toggle specific metric visibility`() = runTest {
-        // Given
-        coEvery { repository.getOverlayConfig() } returns flowOf(testConfig)
-
+    fun `setEnabled should delegate to repository`() = runTest {
         // When
-        useCase.toggleMetric("cpu")
+        useCase.setEnabled(true)
 
         // Then
-        coVerify {
-            repository.saveOverlayConfig(
-                match { !it.showCpu } // Should be toggled
-            )
-        }
+        coVerify { repository.setOverlayEnabled(true) }
+    }
+
+    @Test
+    fun `observeEnabled should return enabled flow from repository`() = runTest {
+        // Given
+        every { repository.isOverlayEnabled } returns flowOf(true)
+
+        // When
+        val result = useCase.observeEnabled().first()
+
+        // Then
+        assertEquals(true, result)
     }
 }

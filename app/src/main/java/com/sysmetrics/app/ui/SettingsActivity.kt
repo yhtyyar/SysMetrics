@@ -1,6 +1,8 @@
 package com.sysmetrics.app.ui
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -9,18 +11,22 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.sysmetrics.app.R
 import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.data.model.OverlayPosition
+import com.sysmetrics.app.data.repository.MetricsHistoryRepository
 import com.sysmetrics.app.databinding.ActivitySettingsBinding
+import com.sysmetrics.app.domain.usecase.ExportMetricsUseCase
+import com.sysmetrics.app.worker.MetricsCollectionWorker
 import kotlinx.coroutines.launch
 
 /**
- * Settings activity - simplified for TV usage
- * Only position and metric toggles
+ * Settings activity - with export and background collection
  */
 // @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var viewModel: SettingsViewModel
+    private var exportUseCase: ExportMetricsUseCase? = null
+    private var isBackgroundCollectionEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +40,7 @@ class SettingsActivity : AppCompatActivity() {
 
         setupToolbar()
         setupUI()
+        setupExport()
         observeState()
     }
 
@@ -75,6 +82,57 @@ class SettingsActivity : AppCompatActivity() {
             btnSave.setOnClickListener {
                 viewModel.saveConfig()
                 finish()
+            }
+        }
+    }
+
+    private fun setupExport() {
+        binding.apply {
+            // Export CSV button
+            btnExportCsv.setOnClickListener {
+                exportMetrics(ExportMetricsUseCase.ExportFormat.CSV)
+            }
+            
+            // Export JSON button
+            btnExportJson.setOnClickListener {
+                exportMetrics(ExportMetricsUseCase.ExportFormat.JSON)
+            }
+            
+            // Background collection toggle
+            switchBackgroundCollection.setOnCheckedChangeListener { _, isChecked ->
+                isBackgroundCollectionEnabled = isChecked
+                if (isChecked) {
+                    MetricsCollectionWorker.schedule(this@SettingsActivity)
+                    Toast.makeText(this@SettingsActivity, "Background collection enabled", Toast.LENGTH_SHORT).show()
+                } else {
+                    MetricsCollectionWorker.cancel(this@SettingsActivity)
+                    Toast.makeText(this@SettingsActivity, "Background collection disabled", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    
+    private fun exportMetrics(format: ExportMetricsUseCase.ExportFormat) {
+        lifecycleScope.launch {
+            try {
+                val historyRepository = MetricsHistoryRepository(
+                    com.sysmetrics.app.data.local.MetricsDatabase.getInstance(this@SettingsActivity).metricsHistoryDao()
+                )
+                val useCase = ExportMetricsUseCase(this@SettingsActivity, historyRepository)
+                
+                val result = useCase.export(24, format)
+                
+                if (result.success && result.shareIntent != null) {
+                    startActivity(Intent.createChooser(result.shareIntent, "Share Export"))
+                } else {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        result.errorMessage ?: getString(R.string.export_error),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

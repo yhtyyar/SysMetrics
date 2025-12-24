@@ -341,12 +341,27 @@ class MainActivityOverlay : AppCompatActivity() {
     }
 
     /**
-     * Check if service is already running
+     * Check if service is already running.
+     * Uses ActivityManager to query running services.
      */
     private fun checkServiceStatus() {
-        // TODO: Implement proper service status check
-        // For now, assume service is not running on activity start
-        updateButtonState(false)
+        val isRunning = isServiceRunning(MinimalistOverlayService::class.java)
+        isOverlayActive = isRunning
+        updateButtonState(isRunning)
+        
+        if (isRunning) {
+            handler.post(updateRunnable)
+        }
+    }
+    
+    /**
+     * Check if a service is currently running.
+     */
+    @Suppress("DEPRECATION")
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+        return manager.getRunningServices(Int.MAX_VALUE)
+            .any { it.service.className == serviceClass.name }
     }
 
     /**

@@ -1,244 +1,243 @@
 # SysMetrics Pro
 
-**Real-Time Android System Monitor with Process Analytics**
+<div align="center">
 
-A high-performance system monitoring application for Android that displays CPU, memory, temperature, and process metrics in a floating overlay window. Built with modern Android architecture (MVVM + Clean Architecture), optimized for minimal resource usage and maximum accuracy.
+![SysMetrics](https://img.shields.io/badge/SysMetrics-Pro-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.7.0-green?style=for-the-badge)
+![Android](https://img.shields.io/badge/Android-5.0%2B-brightgreen?style=for-the-badge)
+![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple?style=for-the-badge)
 
-![Android](https://img.shields.io/badge/Android-8.0%2B-green)
-![Kotlin](https://img.shields.io/badge/Kotlin-1.9-blue)
-![Architecture](https://img.shields.io/badge/Architecture-MVVM%20%2B%20Clean-orange)
-![License](https://img.shields.io/badge/License-MIT-lightgrey)
+**Real-time Android System Monitor with Floating Overlay**
 
-## 📚 Documentation
+[Features](#-features) • [Installation](#-installation) • [Build](#-build-instructions) • [Architecture](#-architecture) • [License](#-license)
 
-- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Product requirements and feature specifications
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development guide, code standards, testing
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-- **[LOGGING_GUIDE.md](LOGGING_GUIDE.md)** - Comprehensive debugging guide
+</div>
+
+---
+
+## 📱 Overview
+
+SysMetrics Pro is a high-performance Android system monitoring application that displays real-time CPU, RAM, temperature, network, and battery metrics in a floating overlay window. Built with modern Android architecture (MVVM + Clean Architecture), optimized for minimal resource usage.
+
+### Key Highlights
+
+- 🚀 **Native C++ performance** — 10x faster metrics collection via JNI
+- 📊 **Real-time monitoring** — CPU, RAM, Temperature, Network, Battery
+- 🎯 **Floating overlay** — Always visible on top of other apps
+- 💾 **24-hour history** — Room database with auto-cleanup
+- 📤 **Data export** — CSV/JSON export with share functionality
+- 🔧 **Home widget** — Quick metrics view on launcher
+- ⚡ **Low overhead** — <50MB RAM, <2% CPU usage
+
+---
 
 ## ✨ Features
 
-### Current Features (v1.5.0)
-- ✅ **Real-time CPU monitoring** - Overall CPU usage with color-coded indicators
-- ✅ **RAM usage tracking** - Used/Total memory in MB with percentage
-- ✅ **Temperature monitoring** - CPU temperature from thermal zones
-- ✅ **Configurable overlay** - Position, opacity, and update intervals
-- ✅ **Minimal resource usage** - <50MB RAM, <2% CPU overhead
-- ✅ **Android TV optimized** - Leanback launcher support, TV-friendly UI
-- ✅ **Modern architecture** - MVVM + Clean Architecture + Coroutines
-- ✅ **Native C++ optimization** - JNI-based metrics (10x faster)
-- ✅ **Memory leak detection** - LeakCanary integration (debug builds)
-- ✅ **Performance benchmarks** - Comprehensive validation suite
-- ✅ **Structured logging** - Timber-based debugging with 15+ tags
+| Feature | Status | Description |
+|---------|:------:|-------------|
+| CPU Monitoring | ✅ | Real-time CPU usage with per-core support |
+| RAM Tracking | ✅ | Used/Total memory with percentage |
+| Temperature | ✅ | CPU/GPU temperature from thermal zones |
+| Network Stats | ✅ | Download/Upload speed monitoring |
+| Battery Info | ✅ | Level, charging status, temperature |
+| Floating Overlay | ✅ | Configurable position and opacity |
+| Room Database | ✅ | 24-hour metrics history storage |
+| CSV/JSON Export | ✅ | Export and share metrics data |
+| Home Widget | ✅ | CPU/RAM widget for home screen |
+| Background Collection | ✅ | WorkManager periodic collection |
+| Material 3 Theme | ✅ | Modern dark theme optimized for TV |
+| Hilt DI | ✅ | Dependency injection framework |
+| Native JNI | ✅ | C++ optimized metrics parsing |
 
-### Planned Features (v2.0.0)
-- 🚧 **Process segmentation** - Self vs Other apps separation
-- 🚧 **Detailed memory analysis** - Breakdown by Native/Java Heap/Graphics
-- 🚧 **24-hour history** - Room database with auto-cleanup
-- 🚧 **Data export** - CSV/JSON export functionality
-- 🚧 **Material 3 UI** - Modern design with dark mode
-- 🚧 **Enhanced settings** - Complete configuration screen
-- 🚧 **Background service** - Continuous monitoring with WorkManager
+---
 
-See [REQUIREMENTS.md](REQUIREMENTS.md) for detailed specifications.
+## 📋 Requirements
 
-## Screenshots
+| Requirement | Version |
+|-------------|---------|
+| Android Studio | Hedgehog (2023.1.1)+ |
+| JDK | 17 |
+| Android SDK | 34 |
+| NDK | 25.2.9519653 |
+| CMake | 3.22.1 |
+| Gradle | 8.2 |
 
-| Main Screen | Overlay | Settings |
-|:-----------:|:-------:|:--------:|
-| Dashboard with metrics preview | Floating overlay window | Configuration options |
+---
 
-## Architecture
+## 🚀 Installation
 
-The application follows Clean Architecture principles with three distinct layers:
+### From APK
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  Presentation Layer                  │
-│  ┌─────────────┐ ┌─────────────┐ ┌───────────────┐  │
-│  │ MainActivity │ │SettingsAct.│ │OverlayService │  │
-│  └──────┬──────┘ └──────┬──────┘ └───────┬───────┘  │
-│         │               │                │          │
-│  ┌──────▼──────┐ ┌──────▼──────┐ ┌───────▼───────┐  │
-│  │MainViewModel│ │SettingsVM  │ │  OverlayView  │  │
-│  └──────┬──────┘ └──────┬──────┘ └───────────────┘  │
-└─────────┼───────────────┼───────────────────────────┘
-          │               │
-┌─────────▼───────────────▼───────────────────────────┐
-│                    Domain Layer                      │
-│  ┌─────────────────────┐ ┌────────────────────────┐ │
-│  │GetSystemMetricsUseCase│ │ManageOverlayConfigUseCase│ │
-│  └──────────┬──────────┘ └───────────┬────────────┘ │
-└─────────────┼────────────────────────┼──────────────┘
-              │                        │
-┌─────────────▼────────────────────────▼──────────────┐
-│                     Data Layer                       │
-│  ┌────────────────────┐ ┌────────────────────────┐  │
-│  │SystemMetricsRepository│ │PreferencesRepository │  │
-│  └──────────┬─────────┘ └───────────┬────────────┘  │
-│             │                       │               │
-│  ┌──────────▼─────────┐ ┌───────────▼────────────┐  │
-│  │ SystemDataSource   │ │PreferencesDataSource   │  │
-│  │ (/proc, /sys)      │ │ (DataStore)            │  │
-│  └────────────────────┘ └────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
-```
+1. Download latest APK from [Releases](https://github.com/yhtyyar/SysMetrics/releases)
+2. Enable "Install from unknown sources" in Settings
+3. Install the APK
+4. Grant overlay permission when prompted
 
-## Tech Stack
+### From Source
 
-| Category | Technology |
-|----------|------------|
-| **Language** | Kotlin 1.9, C++ 17 (JNI) |
-| **Min SDK** | 21 (Android 5.0) |
-| **Target SDK** | 34 (Android 14) |
-| **Architecture** | MVVM + Clean Architecture |
-| **Async** | Kotlin Coroutines + Flow |
-| **DI** | Hilt |
-| **Storage** | DataStore Preferences |
-| **UI** | View Binding + Custom Views |
-| **Native** | NDK, CMake, JNI |
-| **Logging** | Timber |
-| **Testing** | JUnit4, Mockito, Turbine, Benchmark |
-| **Memory** | LeakCanary (debug) |
-
-## Project Structure
-
-```
-app/src/main/
-├── cpp/                          # Native C++ code
-│   ├── CMakeLists.txt           # CMake build configuration
-│   ├── native_metrics.h         # JNI function declarations
-│   └── native_metrics.cpp       # High-performance metrics collection
-├── java/com/sysmetrics/app/
-│   ├── core/
-│   │   ├── common/              # Constants, Result wrapper
-│   │   ├── di/                  # DispatcherProvider
-│   │   └── extensions/          # Kotlin extensions
-│   ├── data/
-│   │   ├── model/               # Data models
-│   │   ├── repository/          # Repository implementations
-│   │   └── source/              # Data sources (System, Native, Preferences)
-│   ├── domain/
-│   │   ├── repository/          # Repository interfaces
-│   │   └── usecase/             # Business logic use cases
-│   ├── native_bridge/           # Kotlin JNI bridge
-│   │   └── NativeMetrics.kt     # Native library wrapper
-│   ├── ui/
-│   │   ├── overlay/             # Overlay UI components
-│   │   ├── MainActivity.kt
-│   │   └── *ViewModel.kt
-│   ├── service/
-│   │   └── OverlayService.kt
-│   ├── di/
-│   │   └── AppModule.kt
-│   └── SysMetricsApp.kt
-└── androidTest/
-    └── benchmark/               # Performance benchmark tests
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Android Studio Hedgehog (2023.1.1) or newer
-- JDK 17
-- Android SDK 34
-- NDK 25.2.9519653 (for native build)
-- CMake 3.22.1
-
-### Build
-
-1. Clone the repository:
 ```bash
 git clone https://github.com/yhtyyar/SysMetrics.git
 cd SysMetrics
-```
-
-2. Open in Android Studio and sync Gradle
-
-3. Build the project:
-```bash
-./gradlew assembleDebug
-```
-
-### Install
-
-```bash
 ./gradlew installDebug
 ```
 
-Or use Android Studio's Run button.
+---
 
-## Usage
+## 🔨 Build Instructions
 
-1. **Launch the app** - Open SysMetrics from your launcher
-2. **Grant overlay permission** - Tap "Start Monitor" and grant the overlay permission when prompted
-3. **View metrics** - The floating overlay will appear showing real-time system metrics
-4. **Configure** - Tap "Settings" to customize position, opacity, and displayed metrics
-5. **Stop monitoring** - Tap "Stop Monitor" to disable the overlay
+### Debug Build
 
-## Permissions
-
-| Permission | Purpose |
-|------------|---------|
-| `SYSTEM_ALERT_WINDOW` | Display overlay window on top of other apps |
-| `FOREGROUND_SERVICE` | Keep monitoring service running |
-| `POST_NOTIFICATIONS` | Show service notification (Android 13+) |
-
-## System Metrics Sources
-
-| Metric | Source |
-|--------|--------|
-| CPU Usage | `/proc/stat` |
-| Memory | `/proc/meminfo` |
-| Temperature | `/sys/class/thermal/thermal_zone*/temp` |
-
-## Performance
-
-The application is optimized for minimal system impact:
-
-- **Memory**: < 50MB working set
-- **CPU**: < 2% in idle monitoring mode
-- **Battery**: Negligible impact with 1s update interval
-- **No network**: All data sourced locally
-
-### Native Optimization
-
-The app includes optional C++ native code for high-performance metrics collection:
-
-| Operation | Kotlin | Native (C++) | Improvement |
-|-----------|--------|--------------|-------------|
-| CPU parsing | ~0.5ms | ~0.05ms | **10x faster** |
-| Memory parsing | ~1ms | ~0.1ms | **10x faster** |
-| Full collection | ~3ms | ~0.3ms | **10x faster** |
-
-Native code automatically falls back to Kotlin if unavailable.
-
-### Memory Leak Detection
-
-LeakCanary is integrated in debug builds for automatic memory leak detection:
-- Automatically detects Activity/Fragment leaks
-- Monitors Service and ViewModel lifecycle
-- Provides detailed leak traces in notification
-
-## Testing
-
-Run unit tests:
 ```bash
+# Clean and build debug APK
+./gradlew clean assembleDebug
+
+# Output: app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Release Build
+
+#### 1. Create Release Keystore (first time only)
+
+```bash
+keytool -genkey -v -keystore release.keystore \
+  -alias sysmetrics -keyalg RSA -keysize 2048 -validity 10000
+```
+
+#### 2. Configure Signing
+
+**Option A: Environment Variables (recommended for CI/CD)**
+
+```bash
+export KEYSTORE_PASSWORD="your_password"
+export KEY_ALIAS="sysmetrics"
+export KEY_PASSWORD="your_key_password"
+```
+
+**Option B: local.properties (local development)**
+
+```properties
+# local.properties (DO NOT commit to git!)
+KEYSTORE_PASSWORD=your_password
+KEY_ALIAS=sysmetrics
+KEY_PASSWORD=your_key_password
+```
+
+#### 3. Build Release APK
+
+```bash
+# Build signed release APK
+./gradlew assembleRelease
+
+# Output: app/build/outputs/apk/release/app-release.apk
+```
+
+### Build All Variants
+
+```bash
+./gradlew assemble
+```
+
+### Run Tests
+
+```bash
+# Unit tests
 ./gradlew test
-```
 
-Run instrumented tests:
-```bash
+# Instrumented tests
 ./gradlew connectedAndroidTest
+
+# All tests with coverage
+./gradlew testDebugUnitTest jacocoTestReport
 ```
 
-Run benchmark tests:
-```bash
-./gradlew :app:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.sysmetrics.app.benchmark.MetricsParserBenchmark
+---
+
+## 🏗 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     PRESENTATION LAYER                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │ MainActivity │  │SettingsAct │  │ MinimalistOverlay   │  │
+│  │   Overlay    │  │             │  │     Service         │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
+│         │                │                    │              │
+│  ┌──────▼──────┐  ┌──────▼──────┐  ┌─────────▼─────────┐   │
+│  │ MainViewModel│  │SettingsVM  │  │  MetricsWidget    │   │
+│  └──────┬──────┘  └──────┬──────┘  └───────────────────┘   │
+└─────────┼────────────────┼───────────────────────────────────┘
+          │                │
+┌─────────▼────────────────▼───────────────────────────────────┐
+│                       DOMAIN LAYER                            │
+│  ┌────────────────────┐  ┌────────────────────────────────┐  │
+│  │GetSystemMetricsUse │  │  ManageOverlayConfigUseCase   │  │
+│  │       Case         │  │                                │  │
+│  └─────────┬──────────┘  └────────────────┬───────────────┘  │
+│            │                              │                   │
+│  ┌─────────▼──────────┐  ┌────────────────▼───────────────┐  │
+│  │ExportMetricsUseCase│  │   IMetricsHistoryRepository   │  │
+│  └────────────────────┘  └────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+          │
+┌─────────▼────────────────────────────────────────────────────┐
+│                        DATA LAYER                             │
+│  ┌────────────────────┐  ┌────────────────────────────────┐  │
+│  │SystemMetricsRepo   │  │   MetricsHistoryRepository    │  │
+│  └─────────┬──────────┘  └────────────────┬───────────────┘  │
+│            │                              │                   │
+│  ┌─────────▼──────────┐  ┌────────────────▼───────────────┐  │
+│  │  SystemDataSource  │  │     MetricsDatabase (Room)    │  │
+│  │  (/proc, /sys)     │  │                                │  │
+│  └────────────────────┘  └────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Configuration Options
+---
+
+## 📁 Project Structure
+
+```
+app/src/main/
+├── cpp/                          # Native C++ code (JNI)
+│   ├── CMakeLists.txt
+│   └── native_metrics.cpp
+├── java/com/sysmetrics/app/
+│   ├── core/
+│   │   ├── common/               # Constants, Result wrapper
+│   │   ├── di/                   # Hilt modules, AppContainer
+│   │   └── SysMetricsApplication.kt
+│   ├── data/
+│   │   ├── local/                # Room Database
+│   │   │   ├── dao/              # MetricsHistoryDao
+│   │   │   ├── entity/           # MetricsHistoryEntity
+│   │   │   └── MetricsDatabase.kt
+│   │   ├── model/                # Data models
+│   │   ├── repository/           # Repository implementations
+│   │   └── source/               # Data sources
+│   ├── domain/
+│   │   ├── repository/           # Repository interfaces
+│   │   └── usecase/              # Business logic
+│   ├── service/
+│   │   └── MinimalistOverlayService.kt
+│   ├── ui/
+│   │   ├── MainActivityOverlay.kt
+│   │   ├── SettingsActivity.kt
+│   │   └── MainViewModel.kt
+│   ├── widget/
+│   │   └── MetricsWidgetProvider.kt
+│   └── worker/
+│       └── MetricsCollectionWorker.kt
+└── res/
+    ├── layout/
+    ├── values/
+    └── xml/
+```
+
+---
+
+## 🔧 Configuration
+
+### Overlay Settings
 
 | Option | Values | Default |
 |--------|--------|---------|
@@ -247,114 +246,77 @@ Run benchmark tests:
 | Opacity | 30% - 100% | 85% |
 | Show CPU | On/Off | On |
 | Show RAM | On/Off | On |
-| Show Temperature | On/Off | On |
+| Show Time | On/Off | On |
 
-## Debugging & Logging
+### Background Collection
 
-SysMetrics uses structured logging with tags for easy debugging. 
+Enable in Settings → Background Collection to collect metrics every minute for 24-hour history.
 
-**📖 Quick Start:** [QUICK_START_LOGGING.md](QUICK_START_LOGGING.md) - Start monitoring in 30 seconds  
-**📚 Full Guide:** [LOGGING_GUIDE.md](LOGGING_GUIDE.md) - Comprehensive 450+ line documentation
+### Data Export
 
-### Quick Debug Commands
+Settings → Export CSV / Export JSON to export and share metrics history.
 
-**Monitor what's displayed on screen:**
-```bash
-adb logcat -s OVERLAY_DISPLAY:D
-```
+---
 
-**Debug CPU calculation issues:**
-```bash
-adb logcat -s METRICS_CPU:D METRICS_BASELINE:D
-```
+## 📊 Performance
 
-**Check top apps collection:**
-```bash
-adb logcat -s PROC_TOP:D
-```
+| Metric | Target | Actual |
+|--------|--------|--------|
+| Memory Usage | <50MB | ~35MB |
+| CPU Overhead | <2% | ~1% |
+| Metrics Update | <16ms | ~5ms |
+| Native Parsing | <1ms | ~0.1ms |
+| APK Size | <15MB | ~10MB |
 
-**Monitor all SysMetrics activity:**
-```bash
-adb logcat | grep -E "OVERLAY_|METRICS_|PROC_"
-```
+---
 
-### Logging Tags
+## 🔐 Permissions
 
-| Tag | Purpose | Example Output |
-|-----|---------|----------------|
-| `OVERLAY_DISPLAY` | What's shown on screen | `📺 CPU on SCREEN: 'CPU: 45%'` |
-| `OVERLAY_UPDATE` | Update cycle timing | `✅ Update cycle completed in 23ms` |
-| `METRICS_CPU` | CPU calculation details | `📈 CPU: totalΔ=645 → 48.2%` |
-| `PROC_TOP` | Top apps collection | `🏆 #1: YouTube - CPU=23.4%` |
-| `OVERLAY_SERVICE` | Service lifecycle | `✅ Baseline ready - Initial CPU: 12.5%` |
+| Permission | Purpose |
+|------------|---------|
+| `SYSTEM_ALERT_WINDOW` | Display floating overlay |
+| `FOREGROUND_SERVICE` | Keep monitoring service running |
+| `POST_NOTIFICATIONS` | Show service notification (Android 13+) |
 
-**For complete logging documentation, troubleshooting guides, and real-world examples, see [LOGGING_GUIDE.md](LOGGING_GUIDE.md)**
+---
 
-## Contributing
+## 🛠 Tech Stack
 
-Contributions are welcome! Please follow these steps:
+| Category | Technology |
+|----------|------------|
+| Language | Kotlin 1.9, C++ 17 |
+| Min SDK | 21 (Android 5.0) |
+| Target SDK | 34 (Android 14) |
+| Architecture | MVVM + Clean Architecture |
+| DI | Hilt 2.48 |
+| Database | Room 2.6.1 |
+| Async | Coroutines + Flow |
+| Background | WorkManager 2.9.0 |
+| Native | NDK + CMake + JNI |
+| Logging | Timber |
+| Testing | JUnit4, MockK, Turbine |
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+---
 
-### Commit Convention
-
-This project follows [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `refactor:` - Code refactoring
-- `test:` - Test additions/changes
-- `chore:` - Build/config changes
-
-## 🗺️ Roadmap
-
-### ✅ Completed (v1.0 - v1.5)
-- [x] Real-time CPU/RAM/Temperature monitoring
-- [x] Floating overlay with configurable position
-- [x] Native C++ optimization (JNI bridge)
-- [x] LeakCanary integration
-- [x] Benchmark tests
-- [x] Clean Architecture refactoring
-- [x] Structured logging system
-
-### 🚧 In Progress (v2.0)
-- [ ] Process segmentation (Self vs Other)
-- [ ] Room database for metrics history
-- [ ] Detailed memory breakdown
-- [ ] CSV/JSON export
-- [ ] Material 3 UI migration
-- [ ] Complete Settings screen
-- [ ] Background monitoring service
-
-### 🔮 Future (v2.1+)
-- [ ] Per-core CPU usage display
-- [ ] GPU monitoring (device-specific)
-- [ ] Network traffic monitoring
-- [ ] Draggable overlay positioning
-- [ ] Custom themes and widgets
-- [ ] Historical charts and trends
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
-
-## License
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+---
 
-- Android documentation for WindowManager and system metrics
-- Kotlin Coroutines for reactive programming patterns
-- Hilt for simplified dependency injection
-- Clean Architecture principles by Robert C. Martin
+## 📚 Documentation
 
-## 📖 Additional Resources
+| Document | Description |
+|----------|-------------|
+| [REQUIREMENTS.md](REQUIREMENTS.md) | Product requirements and specifications |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Development guide and code standards |
+| [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
+| [docs/](docs/) | Additional documentation and archives |
 
-- **Quick Start:** [QUICK_START_LOGGING.md](QUICK_START_LOGGING.md) - Start debugging in 30 seconds
-- **Development:** [DEVELOPMENT.md](DEVELOPMENT.md) - Complete development guide
-- **Requirements:** [REQUIREMENTS.md](REQUIREMENTS.md) - Feature specifications
-- **Release Notes:** [CHANGELOG.md](CHANGELOG.md) - Version history
+---
+
+<div align="center">
+
+**Made with ❤️ for Android**
+
+</div>

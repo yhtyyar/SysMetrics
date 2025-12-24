@@ -3,17 +3,16 @@ package com.sysmetrics.app.data.repository
 import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.data.model.OverlayPosition
 import com.sysmetrics.app.data.source.PreferencesDataSource
-import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
  * Unit tests for PreferencesRepository.
@@ -39,25 +38,28 @@ class PreferencesRepositoryTest {
     @Before
     fun setup() {
         dataSource = mockk(relaxed = true)
-        repository = PreferencesRepository(dataSource)
     }
 
     @Test
     fun `getOverlayConfig should return flow from data source`() = runTest {
         // Given
-        coEvery { dataSource.overlayConfig } returns flowOf(testConfig)
+        every { dataSource.overlayConfig } returns flowOf(testConfig)
+        repository = PreferencesRepository(dataSource)
 
         // When
-        val result = repository.getOverlayConfig().first()
+        val result = repository.overlayConfig.first()
 
         // Then
         assertEquals(testConfig, result)
     }
 
     @Test
-    fun `saveOverlayConfig should delegate to data source`() = runTest {
+    fun `saveConfig should delegate to data source`() = runTest {
+        // Given
+        repository = PreferencesRepository(dataSource)
+        
         // When
-        repository.saveOverlayConfig(testConfig)
+        repository.saveConfig(testConfig)
 
         // Then
         coVerify { dataSource.saveOverlayConfig(testConfig) }
@@ -66,10 +68,11 @@ class PreferencesRepositoryTest {
     @Test
     fun `isOverlayEnabled should return flow from data source`() = runTest {
         // Given
-        coEvery { dataSource.isOverlayEnabled } returns flowOf(true)
+        every { dataSource.isOverlayEnabled } returns flowOf(true)
+        repository = PreferencesRepository(dataSource)
 
         // When
-        val result = repository.isOverlayEnabled().first()
+        val result = repository.isOverlayEnabled.first()
 
         // Then
         assertTrue(result)
@@ -77,6 +80,9 @@ class PreferencesRepositoryTest {
 
     @Test
     fun `setOverlayEnabled should delegate to data source`() = runTest {
+        // Given
+        repository = PreferencesRepository(dataSource)
+        
         // When
         repository.setOverlayEnabled(true)
 

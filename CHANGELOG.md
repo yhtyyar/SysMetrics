@@ -7,16 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.7.0] - 2025-12-24
 
-### Planned
-- Process segmentation (Self vs Other apps)
-- 24-hour metrics history with Room database
-- CSV/JSON data export
-- Material 3 UI components
-- Detailed memory analysis by type
-- Complete Settings screen
-- Background monitoring service
+### Added
+- **Hilt DI** - Full dependency injection with `@HiltAndroidApp`, `@HiltWorker`
+- **Room Database** - 24-hour metrics history with auto-cleanup
+  - `MetricsDatabase`, `MetricsHistoryDao`, `MetricsHistoryEntity`
+  - Statistics aggregation (avg, min, max)
+- **CSV/JSON Export** - Export and share metrics data via `ExportMetricsUseCase`
+- **Home Screen Widget** - CPU/RAM metrics widget with refresh button
+- **WorkManager** - Background metrics collection every minute
+- **Material 3 Theme** - Dark theme with full color scheme
+- **MainViewModel** - MVVM pattern for main activity
+- **Extended Settings** - Export buttons, background collection toggle
+
+### Changed
+- **SysMetricsApplication** - Integrated Hilt and WorkManager configuration
+- **SettingsActivity** - Added export and background collection controls
+- **AppModule** - Provides all dependencies via Hilt
+
+### Technical
+- KSP annotation processing for Hilt and Room
+- FileProvider for secure file sharing
+- Coroutine-based async operations throughout
+
+---
+
+## [2.6.0] - 2025-12-18
+
+### Added
+- Network traffic monitoring
+- GPU metrics support
+- Battery monitoring
+- Adaptive performance intervals
 
 ---
 

@@ -13,73 +13,68 @@ class FallbackStringFormatterTest {
     private val formatter = FallbackStringFormatter()
 
     @Test
-    fun `formatTime with 24h format returns correct string`() {
+    fun `formatTime returns correct string`() {
         // Given
         val hour = 14
         val minute = 35
-        val use24h = true
 
         // When
-        val result = formatter.formatTime(hour, minute, use24h)
+        val result = formatter.formatTime(hour, minute)
 
         // Then
         assertEquals("14:35", result)
     }
 
     @Test
-    fun `formatTime with 12h format AM returns correct string`() {
+    fun `formatTime with single digit hour returns padded string`() {
         // Given
         val hour = 9
         val minute = 15
-        val use24h = false
 
         // When
-        val result = formatter.formatTime(hour, minute, use24h)
+        val result = formatter.formatTime(hour, minute)
 
         // Then
-        assertEquals("9:15 AM", result)
+        assertEquals("09:15", result)
     }
 
     @Test
-    fun `formatTime with 12h format PM returns correct string`() {
+    fun `formatTime with afternoon hour returns correct string`() {
         // Given
         val hour = 15
         val minute = 45
-        val use24h = false
 
         // When
-        val result = formatter.formatTime(hour, minute, use24h)
+        val result = formatter.formatTime(hour, minute)
 
         // Then
-        assertEquals("3:45 PM", result)
+        assertEquals("15:45", result)
     }
 
     @Test
-    fun `formatTime with 12h format midnight returns correct string`() {
+    fun `formatTime with midnight returns correct string`() {
         // Given
         val hour = 0
         val minute = 0
-        val use24h = false
 
         // When
-        val result = formatter.formatTime(hour, minute, use24h)
+        val result = formatter.formatTime(hour, minute)
 
         // Then
-        assertEquals("12:00 AM", result)
+        assertEquals("00:00", result)
     }
 
     @Test
-    fun `formatTime with 12h format noon returns correct string`() {
+    fun `formatTime with noon returns correct string`() {
         // Given
         val hour = 12
         val minute = 30
-        val use24h = false
 
         // When
-        val result = formatter.formatTime(hour, minute, use24h)
+        val result = formatter.formatTime(hour, minute)
 
         // Then
-        assertEquals("12:30 PM", result)
+        assertEquals("12:30", result)
     }
 
     @Test
