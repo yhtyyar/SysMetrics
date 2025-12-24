@@ -41,7 +41,7 @@ class MetricsIntegrationTest {
         val cpuUsage = cpuCollector.getCpuUsage()
         val coreCount = cpuCollector.getCoreCount()
 
-        val timeString = stringFormatter.formatTime(14, 35, true)
+        val timeString = stringFormatter.formatTime(14, 35)
         val cpuString = stringFormatter.formatCpu(25.5f)
         val ramString = stringFormatter.formatRam(1024, 4096)
         val selfStatsString = stringFormatter.formatSelfStats(15.2f, 89)
