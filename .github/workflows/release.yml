@@ -1,0 +1,273 @@
+# =============================================================================
+# SysMetrics Pro — Release Pipeline
+# =============================================================================
+# Triggers: tags matching v*.*.*
+# Jobs: version validation, signed release APK, AAB, GitHub Release
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+env:
+  GRADLE_OPTS: >-
+    -Dorg.gradle.daemon=false
+    -Dorg.gradle.parallel=true
+    -Dorg.gradle.caching=true
+    -Dorg.gradle.jvmargs=-Xmx4g
+  JAVA_VERSION: '17'
+  NDK_VERSION: '25.2.9519653'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Version Validation
+  # ---------------------------------------------------------------------------
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version_name: ${{ steps.version.outputs.name }}
+      version_code: ${{ steps.version.outputs.code }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract and validate version
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          TAG_VERSION="${TAG#v}"
+          echo "Tag version: ${TAG_VERSION}"
+
+          # Read versionName from build.gradle.kts
+          GRADLE_VERSION=$(grep 'versionName' app/build.gradle.kts \
+            | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          GRADLE_CODE=$(grep 'versionCode' app/build.gradle.kts \
+            | head -1 | sed 's/[^0-9]*//g')
+
+          echo "Gradle versionName: ${GRADLE_VERSION}"
+          echo "Gradle versionCode: ${GRADLE_CODE}"
+
+          if [ "${TAG_VERSION}" != "${GRADLE_VERSION}" ]; then
+            echo "::error::Tag version (${TAG_VERSION}) does not match build.gradle.kts versionName (${GRADLE_VERSION})"
+            exit 1
+          fi
+
+          # Validate semver format
+          if ! echo "${TAG_VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Version ${TAG_VERSION} does not follow semver"
+            exit 1
+          fi
+
+          echo "name=${GRADLE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "code=${GRADLE_CODE}" >> "$GITHUB_OUTPUT"
+          echo "✓ Version validated: ${GRADLE_VERSION} (code ${GRADLE_CODE})"
+
+  # ---------------------------------------------------------------------------
+  # Unit Tests (gate)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Pre-release Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ validate ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests
+        run: ./gradlew :app:testReleaseUnitTest --stacktrace
+
+      - name: Run lint
+        run: ./gradlew :app:lintRelease --stacktrace
+
+  # ---------------------------------------------------------------------------
+  # Build Signed APK & AAB
+  # ---------------------------------------------------------------------------
+  build-release:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [ test ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          echo "✓ Keystore decoded"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Build release AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:bundleRelease --stacktrace
+
+      - name: Verify native libraries in APK
+        run: |
+          echo "=== Checking native libraries in release APK ==="
+          for abi in armeabi-v7a arm64-v8a x86 x86_64; do
+            if unzip -l app/build/outputs/apk/release/*.apk | grep -q "lib/${abi}/libsysmetrics_native.so"; then
+              echo "✓ ${abi}: libsysmetrics_native.so found"
+            else
+              echo "✗ ${abi}: libsysmetrics_native.so MISSING" && exit 1
+            fi
+          done
+
+      - name: Verify APK signing
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          if $ANDROID_HOME/build-tools/34.0.0/apksigner verify --print-certs "$APK"; then
+            echo "✓ APK signature valid"
+          else
+            echo "✗ APK signature verification failed" && exit 1
+          fi
+
+      - name: Shorten artifact names
+        run: |
+          VERSION="${{ needs.validate.outputs.version_name }}"
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -1)
+          cp "$APK" "app/build/outputs/SysMetrics-v${VERSION}.apk"
+          cp "$AAB" "app/build/outputs/SysMetrics-v${VERSION}.aab"
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/SysMetrics-v*.apk
+          retention-days: 90
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: app/build/outputs/SysMetrics-v*.aab
+          retention-days: 90
+
+      - name: Upload ProGuard mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: proguard-mapping
+          path: app/build/outputs/mapping/release/mapping.txt
+          retention-days: 180
+
+  # ---------------------------------------------------------------------------
+  # Create GitHub Release
+  # ---------------------------------------------------------------------------
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ validate, build-release ]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: artifacts/
+
+      - name: Download release AAB
+        uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+          path: artifacts/
+
+      - name: Download ProGuard mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: proguard-mapping
+          path: artifacts/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from ${PREV_TAG} to ${GITHUB_REF_NAME}..."
+            CHANGES=$(git log "${PREV_TAG}..${GITHUB_REF_NAME}" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "No previous tag found, using full log..."
+            CHANGES=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+
+          # Write to file to preserve multiline
+          {
+            echo "## What's Changed"
+            echo ""
+            echo "${CHANGES}"
+            echo ""
+            echo "---"
+            echo "**Version:** ${{ needs.validate.outputs.version_name }}"
+            echo "**Version Code:** ${{ needs.validate.outputs.version_code }}"
+            echo "**NDK:** ${{ env.NDK_VERSION }}"
+            echo "**ABIs:** armeabi-v7a, arm64-v8a, x86, x86_64"
+          } > release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SysMetrics Pro v${{ needs.validate.outputs.version_name }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            artifacts/SysMetrics-v*.apk
+            artifacts/SysMetrics-v*.aab
+            artifacts/mapping.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

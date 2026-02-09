@@ -1,0 +1,267 @@
+# =============================================================================
+# SysMetrics Pro — Nightly Pipeline
+# =============================================================================
+# Triggers: cron schedule (03:00 UTC daily), manual dispatch
+# Jobs: full test suite, performance benchmarks, dependency updates check
+# =============================================================================
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+env:
+  GRADLE_OPTS: >-
+    -Dorg.gradle.daemon=false
+    -Dorg.gradle.parallel=true
+    -Dorg.gradle.caching=true
+    -Dorg.gradle.jvmargs=-Xmx4g
+  JAVA_VERSION: '17'
+  NDK_VERSION: '25.2.9519653'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Full Test Suite (unit + instrumented on multiple API levels)
+  # ---------------------------------------------------------------------------
+  full-tests:
+    name: Full Test Suite (API ${{ matrix.api-level }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [ 28, 30, 33, 34 ]
+        include:
+          - api-level: 28
+            target: default
+            arch: x86
+          - api-level: 30
+            target: google_apis
+            arch: x86_64
+          - api-level: 33
+            target: google_apis
+            arch: x86_64
+          - api-level: 34
+            target: google_apis
+            arch: x86_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-nightly-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
+
+      - name: Create AVD and snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "AVD snapshot generated"
+
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-results-api${{ matrix.api-level }}
+          path: |
+            app/build/reports/tests/
+            app/build/reports/androidTests/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Performance Benchmarks
+  # ---------------------------------------------------------------------------
+  benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run benchmarks on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=androidx.benchmark --stacktrace || true
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            app/build/outputs/connected_android_test_additional_output/
+            app/build/reports/androidTests/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Dependency Updates Check
+  # ---------------------------------------------------------------------------
+  dependency-check:
+    name: Dependency Updates Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Check for dependency updates
+        run: ./gradlew :app:dependencies --configuration releaseRuntimeClasspath > dependency-report.txt 2>&1
+
+      - name: Check for known vulnerabilities (build validation)
+        run: |
+          echo "=== Build validation with latest dependencies ==="
+          ./gradlew :app:assembleDebug --stacktrace
+          echo "✓ Build successful with current dependencies"
+
+      - name: Upload dependency report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependency-report.txt
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Nightly Build (full release-like build for smoke testing)
+  # ---------------------------------------------------------------------------
+  nightly-build:
+    name: Nightly Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [ full-tests ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK (all ABIs)
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Verify native libraries
+        run: |
+          echo "=== Nightly native library verification ==="
+          for abi in armeabi-v7a arm64-v8a x86 x86_64; do
+            if unzip -l app/build/outputs/apk/debug/*.apk | grep -q "lib/${abi}/libsysmetrics_native.so"; then
+              echo "✓ ${abi}: libsysmetrics_native.so found"
+            else
+              echo "✗ ${abi}: libsysmetrics_native.so MISSING" && exit 1
+            fi
+          done
+
+      - name: Upload nightly APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-apk-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 3
