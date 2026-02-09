@@ -141,25 +141,46 @@ jobs:
           script: echo "AVD snapshot generated"
 
       - name: Run instrumented tests (excluding benchmarks)
+        id: run-tests
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 20
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-save -noaudio -no-boot-anim
+          emulator-boot-timeout: 600
           disable-animations: true
-          script: >-
-            ./gradlew :app:connectedDebugAndroidTest
-            -Pandroid.testInstrumentationRunnerArguments.notPackage=com.sysmetrics.app.benchmark
-            --stacktrace
+          script: |
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 2; done; input keyevent 82'
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
+      - name: Retry instrumented tests (on failure)
+        id: retry-tests
+        if: steps.run-tests.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 20
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-save -noaudio -no-boot-anim
+          emulator-boot-timeout: 600
+          disable-animations: true
+          script: |
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 2; done; input keyevent 82'
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace
 
       - name: Upload instrumented test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nightly-instrumented-test-results-api${{ matrix.api-level }}
-          path: app/build/reports/androidTests/connected/
+          path: |
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
           retention-days: 7
 
   # ---------------------------------------------------------------------------
@@ -199,17 +220,20 @@ jobs:
       - name: Run benchmarks on emulator
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 25
         with:
           api-level: 34
           target: google_apis
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-save -noaudio -no-boot-anim
+          emulator-boot-timeout: 600
           disable-animations: true
-          script: >-
-            ./gradlew :app:connectedBenchmarkAndroidTest
-            -Pandroid.testInstrumentationRunnerArguments.package=com.sysmetrics.app.benchmark
-            --stacktrace
+          script: |
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 2; done; input keyevent 82'
+            ./gradlew :app:connectedBenchmarkAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.package=com.sysmetrics.app.benchmark \
+              --stacktrace
 
       - name: Upload benchmark results
         if: always()

@@ -17,6 +17,7 @@ android {
         versionName = "2.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["notPackage"] = "com.sysmetrics.app.benchmark"
 
         // NDK configuration for native code
         ndk {

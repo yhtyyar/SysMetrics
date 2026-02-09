@@ -57,9 +57,8 @@ cd SysMetrics
 # Unit tests
 ./gradlew :app:testDebugUnitTest
 
-# Instrumented tests (requires emulator or device)
-./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.notPackage=com.sysmetrics.app.benchmark
+# Instrumented tests (requires emulator or device, benchmarks excluded via DSL)
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 ## Code Standards
