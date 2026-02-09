@@ -140,16 +140,19 @@ jobs:
           disable-animations: true
           script: echo "AVD snapshot generated"
 
-      - name: Run instrumented tests
+      - name: Run instrumented tests (excluding benchmarks)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-save -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+          script: >-
+            ./gradlew :app:connectedDebugAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.notPackage=com.sysmetrics.app.benchmark
+            --stacktrace
 
       - name: Upload instrumented test results
         if: always()
@@ -201,9 +204,12 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-save -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=androidx.benchmark --stacktrace
+          script: >-
+            ./gradlew :app:connectedBenchmarkAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.package=com.sysmetrics.app.benchmark
+            --stacktrace
 
       - name: Upload benchmark results
         if: always()

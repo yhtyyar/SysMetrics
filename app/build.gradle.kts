@@ -61,6 +61,12 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
+        create("benchmark") {
+            isDebuggable = false
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
@@ -95,6 +101,13 @@ android {
         )
     }
 
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            // Benchmark tests require non-debuggable APK; exclude from debug test runs
+        }
+    }
+
     // Native build configuration
     externalNativeBuild {
         cmake {
@@ -104,6 +117,10 @@ android {
     }
 
     ndkVersion = "25.2.9519653"
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
