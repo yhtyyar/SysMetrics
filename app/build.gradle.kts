@@ -34,11 +34,10 @@ android {
 
     signingConfigs {
         create("release") {
-            // For production: Use environment variables or gradle.properties
             storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "sysmetrics2024"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "sysmetrics"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "sysmetrics2024"
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 

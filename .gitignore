@@ -81,6 +81,9 @@ Thumbs.db
 *.tmp
 *.swp
 
+# Room schema exports
+app/schemas/
+
 # Coverage reports
 coverage/
 *.exec

@@ -1,79 +1,38 @@
-# SysMetrics Pro
+# SysMetrics
 
 <div align="center">
 
-![SysMetrics](https://img.shields.io/badge/SysMetrics-Pro-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-2.7.0-green?style=for-the-badge)
-![Android](https://img.shields.io/badge/Android-5.0%2B-brightgreen?style=for-the-badge)
-![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple?style=for-the-badge)
+[![CI](https://github.com/yhtyyar/SysMetrics/actions/workflows/ci.yml/badge.svg)](https://github.com/yhtyyar/SysMetrics/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Android](https://img.shields.io/badge/Android-5.0%2B-brightgreen.svg)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.20-purple.svg)](https://kotlinlang.org)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
-**Real-time Android System Monitor with Floating Overlay**
+**Real-time Android system monitor with a floating overlay, native C++ backend, and home-screen widget.**
 
-[Features](#-features) • [Installation](#-installation) • [Build](#-build-instructions) • [Architecture](#-architecture) • [License](#-license)
+[Features](#features) · [Quick Start](#quick-start) · [Build](#build) · [Architecture](#architecture) · [Contributing](#contributing) · [License](#license)
 
 </div>
 
 ---
 
-## 📱 Overview
+## Features
 
-SysMetrics Pro is a high-performance Android system monitoring application that displays real-time CPU, RAM, temperature, network, and battery metrics in a floating overlay window. Built with modern Android architecture (MVVM + Clean Architecture), optimized for minimal resource usage.
+- **Real-time overlay** — CPU, RAM, temperature, network speed, battery level in a draggable floating window
+- **Native C++ metrics** — JNI bridge to `/proc` and `/sys` for 10x faster parsing than pure Kotlin
+- **24-hour history** — Room database with auto-cleanup and CSV/JSON export
+- **Home-screen widget** — CPU and RAM at a glance without opening the app
+- **Android TV support** — Leanback launcher, D-pad navigation, 10-foot UI optimized layouts
+- **Low overhead** — ~35 MB RAM, <2% CPU idle, minimal battery impact
 
-### Key Highlights
+## Quick Start
 
-- 🚀 **Native C++ performance** — 10x faster metrics collection via JNI
-- 📊 **Real-time monitoring** — CPU, RAM, Temperature, Network, Battery
-- 🎯 **Floating overlay** — Always visible on top of other apps
-- 💾 **24-hour history** — Room database with auto-cleanup
-- 📤 **Data export** — CSV/JSON export with share functionality
-- 🔧 **Home widget** — Quick metrics view on launcher
-- ⚡ **Low overhead** — <50MB RAM, <2% CPU usage
+### Install from APK
 
----
+1. Download the latest APK from [Releases](https://github.com/yhtyyar/SysMetrics/releases)
+2. Install and grant **Display over other apps** permission when prompted
 
-## ✨ Features
-
-| Feature | Status | Description |
-|---------|:------:|-------------|
-| CPU Monitoring | ✅ | Real-time CPU usage with per-core support |
-| RAM Tracking | ✅ | Used/Total memory with percentage |
-| Temperature | ✅ | CPU/GPU temperature from thermal zones |
-| Network Stats | ✅ | Download/Upload speed monitoring |
-| Battery Info | ✅ | Level, charging status, temperature |
-| Floating Overlay | ✅ | Configurable position and opacity |
-| Room Database | ✅ | 24-hour metrics history storage |
-| CSV/JSON Export | ✅ | Export and share metrics data |
-| Home Widget | ✅ | CPU/RAM widget for home screen |
-| Background Collection | ✅ | WorkManager periodic collection |
-| Material 3 Theme | ✅ | Modern dark theme optimized for TV |
-| Hilt DI | ✅ | Dependency injection framework |
-| Native JNI | ✅ | C++ optimized metrics parsing |
-
----
-
-## 📋 Requirements
-
-| Requirement | Version |
-|-------------|---------|
-| Android Studio | Hedgehog (2023.1.1)+ |
-| JDK | 17 |
-| Android SDK | 34 |
-| NDK | 25.2.9519653 |
-| CMake | 3.22.1 |
-| Gradle | 8.2 |
-
----
-
-## 🚀 Installation
-
-### From APK
-
-1. Download latest APK from [Releases](https://github.com/yhtyyar/SysMetrics/releases)
-2. Enable "Install from unknown sources" in Settings
-3. Install the APK
-4. Grant overlay permission when prompted
-
-### From Source
+### Build from Source
 
 ```bash
 git clone https://github.com/yhtyyar/SysMetrics.git
@@ -81,242 +40,119 @@ cd SysMetrics
 ./gradlew installDebug
 ```
 
----
+**Prerequisites:** JDK 17, Android SDK 34, NDK 25.2.9519653, CMake 3.22.1
 
-## 🔨 Build Instructions
-
-### Debug Build
+## Build
 
 ```bash
-# Clean and build debug APK
-./gradlew clean assembleDebug
+# Debug APK
+./gradlew assembleDebug
 
-# Output: app/build/outputs/apk/debug/app-debug.apk
-```
-
-### Release Build
-
-#### 1. Create Release Keystore (first time only)
-
-```bash
-keytool -genkey -v -keystore release.keystore \
-  -alias sysmetrics -keyalg RSA -keysize 2048 -validity 10000
-```
-
-#### 2. Configure Signing
-
-**Option A: Environment Variables (recommended for CI/CD)**
-
-```bash
-export KEYSTORE_PASSWORD="your_password"
-export KEY_ALIAS="sysmetrics"
-export KEY_PASSWORD="your_key_password"
-```
-
-**Option B: local.properties (local development)**
-
-```properties
-# local.properties (DO NOT commit to git!)
-KEYSTORE_PASSWORD=your_password
-KEY_ALIAS=sysmetrics
-KEY_PASSWORD=your_key_password
-```
-
-#### 3. Build Release APK
-
-```bash
-# Build signed release APK
+# Release APK (requires signing — see CONTRIBUTING.md)
 ./gradlew assembleRelease
 
-# Output: app/build/outputs/apk/release/app-release.apk
-```
-
-### Build All Variants
-
-```bash
-./gradlew assemble
-```
-
-### Run Tests
-
-```bash
 # Unit tests
-./gradlew test
+./gradlew :app:testDebugUnitTest
 
-# Instrumented tests
-./gradlew connectedAndroidTest
+# Instrumented tests (emulator required)
+./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.notPackage=com.sysmetrics.app.benchmark
 
-# All tests with coverage
-./gradlew testDebugUnitTest jacocoTestReport
+# Lint
+./gradlew :app:lintDebug
 ```
 
----
+## Architecture
 
-## 🏗 Architecture
+MVVM + Clean Architecture with three layers:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     PRESENTATION LAYER                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │ MainActivity │  │SettingsAct │  │ MinimalistOverlay   │  │
-│  │   Overlay    │  │             │  │     Service         │  │
-│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
-│         │                │                    │              │
-│  ┌──────▼──────┐  ┌──────▼──────┐  ┌─────────▼─────────┐   │
-│  │ MainViewModel│  │SettingsVM  │  │  MetricsWidget    │   │
-│  └──────┬──────┘  └──────┬──────┘  └───────────────────┘   │
-└─────────┼────────────────┼───────────────────────────────────┘
-          │                │
-┌─────────▼────────────────▼───────────────────────────────────┐
-│                       DOMAIN LAYER                            │
-│  ┌────────────────────┐  ┌────────────────────────────────┐  │
-│  │GetSystemMetricsUse │  │  ManageOverlayConfigUseCase   │  │
-│  │       Case         │  │                                │  │
-│  └─────────┬──────────┘  └────────────────┬───────────────┘  │
-│            │                              │                   │
-│  ┌─────────▼──────────┐  ┌────────────────▼───────────────┐  │
-│  │ExportMetricsUseCase│  │   IMetricsHistoryRepository   │  │
-│  └────────────────────┘  └────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-          │
-┌─────────▼────────────────────────────────────────────────────┐
-│                        DATA LAYER                             │
-│  ┌────────────────────┐  ┌────────────────────────────────┐  │
-│  │SystemMetricsRepo   │  │   MetricsHistoryRepository    │  │
-│  └─────────┬──────────┘  └────────────────┬───────────────┘  │
-│            │                              │                   │
-│  ┌─────────▼──────────┐  ┌────────────────▼───────────────┐  │
-│  │  SystemDataSource  │  │     MetricsDatabase (Room)    │  │
-│  │  (/proc, /sys)     │  │                                │  │
-│  └────────────────────┘  └────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+Presentation          Domain                Data
+─────────────         ──────────            ──────────
+Activity/Fragment  →  UseCases           →  Repositories
+ViewModel             Repository I/F        Room DB
+Overlay Service                             /proc, /sys datasources
+Widget                                      Native C++ (JNI)
 ```
 
----
+| Layer | Responsibilities |
+|-------|-----------------|
+| **Presentation** | `MainActivityOverlay`, `SettingsActivity`, `MinimalistOverlayService`, `MetricsWidgetProvider`, ViewModels |
+| **Domain** | `GetSystemMetricsUseCase`, `ExportMetricsUseCase`, `ManageOverlayConfigUseCase`, repository interfaces |
+| **Data** | `SystemMetricsRepository`, `MetricsDatabase` (Room), `SystemDataSource`, `NativeMetrics` (JNI bridge) |
 
-## 📁 Project Structure
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Language | Kotlin 1.9.20, C++17 |
+| SDK | Min 21, Target 34 |
+| DI | Hilt 2.48 (KSP) |
+| Database | Room 2.6.1 (KSP) |
+| Async | Coroutines + Flow |
+| Background | WorkManager 2.9.0 |
+| Native | NDK 25.2 + CMake 3.22.1 |
+| CI | GitHub Actions |
+| Testing | JUnit 4, MockK, Espresso, AndroidX Benchmark |
+
+## Permissions
+
+| Permission | Why |
+|------------|-----|
+| `SYSTEM_ALERT_WINDOW` | Floating overlay display |
+| `FOREGROUND_SERVICE` | Keep monitoring service alive |
+| `POST_NOTIFICATIONS` | Service notification (Android 13+) |
+| `RECEIVE_BOOT_COMPLETED` | Optional auto-start on boot |
+
+No network permissions. No analytics. All data stays on-device.
+
+## Performance
+
+| Metric | Target | Measured |
+|--------|--------|----------|
+| RAM usage | <50 MB | ~35 MB |
+| CPU idle | <2% | ~1% |
+| Overlay update | <16 ms | ~5 ms |
+| Native parse | <1 ms | ~0.1 ms |
+| APK size | <15 MB | ~10 MB |
+
+## Project Structure
 
 ```
 app/src/main/
-├── cpp/                          # Native C++ code (JNI)
-│   ├── CMakeLists.txt
-│   └── native_metrics.cpp
+├── cpp/                     # Native C++ (JNI metrics, network stats, analytics)
 ├── java/com/sysmetrics/app/
-│   ├── core/
-│   │   ├── common/               # Constants, Result wrapper
-│   │   ├── di/                   # Hilt modules, AppContainer
-│   │   └── SysMetricsApplication.kt
-│   ├── data/
-│   │   ├── local/                # Room Database
-│   │   │   ├── dao/              # MetricsHistoryDao
-│   │   │   ├── entity/           # MetricsHistoryEntity
-│   │   │   └── MetricsDatabase.kt
-│   │   ├── model/                # Data models
-│   │   ├── repository/           # Repository implementations
-│   │   └── source/               # Data sources
-│   ├── domain/
-│   │   ├── repository/           # Repository interfaces
-│   │   └── usecase/              # Business logic
-│   ├── service/
-│   │   └── MinimalistOverlayService.kt
-│   ├── ui/
-│   │   ├── MainActivityOverlay.kt
-│   │   ├── SettingsActivity.kt
-│   │   └── MainViewModel.kt
-│   ├── widget/
-│   │   └── MetricsWidgetProvider.kt
-│   └── worker/
-│       └── MetricsCollectionWorker.kt
-└── res/
-    ├── layout/
-    ├── values/
-    └── xml/
+│   ├── core/                # Application, Constants, DI modules
+│   ├── data/                # Repositories, Room DB, data sources
+│   ├── domain/              # Use cases, repository interfaces
+│   ├── native_bridge/       # Kotlin JNI wrappers
+│   ├── service/             # Overlay foreground service
+│   ├── ui/                  # Activities, ViewModels, fragments
+│   ├── widget/              # Home-screen widget provider
+│   └── worker/              # WorkManager background collection
+└── res/                     # Layouts, values, XML configs
 ```
 
----
+## Contributing
 
-## 🔧 Configuration
+Contributions are welcome! Please read:
 
-### Overlay Settings
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, code standards, commit style
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — community guidelines
+- [SECURITY.md](SECURITY.md) — vulnerability reporting
 
-| Option | Values | Default |
-|--------|--------|---------|
-| Position | Top-Left, Top-Right, Bottom-Left, Bottom-Right | Top-Left |
-| Update Interval | 500ms, 1000ms, 2000ms | 1000ms |
-| Opacity | 30% - 100% | 85% |
-| Show CPU | On/Off | On |
-| Show RAM | On/Off | On |
-| Show Time | On/Off | On |
+This project uses [Conventional Commits](https://conventionalcommits.org) with Android module scopes (e.g., `feat(overlay):`, `fix(native):`).
 
-### Background Collection
-
-Enable in Settings → Background Collection to collect metrics every minute for 24-hour history.
-
-### Data Export
-
-Settings → Export CSV / Export JSON to export and share metrics history.
-
----
-
-## 📊 Performance
-
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Memory Usage | <50MB | ~35MB |
-| CPU Overhead | <2% | ~1% |
-| Metrics Update | <16ms | ~5ms |
-| Native Parsing | <1ms | ~0.1ms |
-| APK Size | <15MB | ~10MB |
-
----
-
-## 🔐 Permissions
-
-| Permission | Purpose |
-|------------|---------|
-| `SYSTEM_ALERT_WINDOW` | Display floating overlay |
-| `FOREGROUND_SERVICE` | Keep monitoring service running |
-| `POST_NOTIFICATIONS` | Show service notification (Android 13+) |
-
----
-
-## 🛠 Tech Stack
-
-| Category | Technology |
-|----------|------------|
-| Language | Kotlin 1.9, C++ 17 |
-| Min SDK | 21 (Android 5.0) |
-| Target SDK | 34 (Android 14) |
-| Architecture | MVVM + Clean Architecture |
-| DI | Hilt 2.48 |
-| Database | Room 2.6.1 |
-| Async | Coroutines + Flow |
-| Background | WorkManager 2.9.0 |
-| Native | NDK + CMake + JNI |
-| Logging | Timber |
-| Testing | JUnit4, MockK, Turbine |
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [REQUIREMENTS.md](REQUIREMENTS.md) | Product requirements and specifications |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Development guide and code standards |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, development setup |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Code standards, templates, debugging |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
-| [docs/](docs/) | Additional documentation and archives |
+| [REQUIREMENTS.md](REQUIREMENTS.md) | Product requirements |
+| [SECURITY.md](SECURITY.md) | Security policy and vulnerability reporting |
 
----
+## License
 
-<div align="center">
-
-**Made with ❤️ for Android**
-
-</div>
+[MIT](LICENSE) &copy; 2025 SysMetrics
