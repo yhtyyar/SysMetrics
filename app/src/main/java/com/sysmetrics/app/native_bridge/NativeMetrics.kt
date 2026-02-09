@@ -108,6 +108,18 @@ object NativeMetrics {
     }
 
     /**
+     * Get CPU core count using native code.
+     * @return number of CPU cores, or -1 if unavailable
+     */
+    fun getCpuCoreCountNative(): Int {
+        return if (isLoaded) {
+            runCatching { getCpuCoreCount() }.getOrDefault(-1)
+        } else {
+            -1
+        }
+    }
+
+    /**
      * Format time string using native code (optimized).
      */
     fun formatTimeNative(hour: Int, minute: Int, use24h: Boolean): String {

@@ -17,7 +17,7 @@
     <!-- Format Strings -->
     <string name="percent_format">%.1f%%</string>
     <string name="percent_int_format">%d%%</string>
-    <string name="memory_format">%d / %d MB</string>
+    <string name="memory_format">%1$d / %2$d MB</string>
     <string name="temp_format">%.0f°C</string>
     <string name="not_available">N/A</string>
 

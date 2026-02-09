@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <inttypes.h>
 
 // Path to /proc/net/dev
 static const char* PROC_NET_DEV = "/proc/net/dev";
@@ -54,7 +55,7 @@ static int parse_interface_line(const char* line, InterfaceStatsNative* stats, i
     uint64_t dummy; // For unused fields
     
     int parsed = sscanf(values,
-        "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+        "%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64,
         &rx_bytes, &rx_packets, &rx_errs, &rx_drop, &dummy, &dummy, &dummy, &dummy,
         &tx_bytes, &tx_packets, &tx_errs, &tx_drop);
     
@@ -204,7 +205,7 @@ int native_format_speed_string(
     const char* pfx = prefix ? prefix : "";
     
     if (bytes_per_sec < 1024) {
-        return snprintf(buffer, buffer_size, "%s%lu B/s", pfx, bytes_per_sec);
+        return snprintf(buffer, buffer_size, "%s%" PRIu64 " B/s", pfx, bytes_per_sec);
     } else if (bytes_per_sec < 1024 * 1024) {
         return snprintf(buffer, buffer_size, "%s%.1f KB/s", pfx, bytes_per_sec / 1024.0f);
     } else if (bytes_per_sec < 1024ULL * 1024 * 1024) {
@@ -218,7 +219,7 @@ int native_format_bytes_string(uint64_t bytes, char* buffer, int buffer_size) {
     if (!buffer || buffer_size <= 0) return -1;
     
     if (bytes < 1024) {
-        return snprintf(buffer, buffer_size, "%lu B", bytes);
+        return snprintf(buffer, buffer_size, "%" PRIu64 " B", bytes);
     } else if (bytes < 1024 * 1024) {
         return snprintf(buffer, buffer_size, "%.1f KB", bytes / 1024.0f);
     } else if (bytes < 1024ULL * 1024 * 1024) {
