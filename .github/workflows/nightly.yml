@@ -12,6 +12,13 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   GRADLE_OPTS: >-
     -Dorg.gradle.daemon=false
@@ -23,11 +30,50 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Full Test Suite (unit + instrumented on multiple API levels)
+  # Unit Tests (run once, not per API level)
   # ---------------------------------------------------------------------------
-  full-tests:
-    name: Full Test Suite (API ${{ matrix.api-level }})
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-unit-test-results
+          path: app/build/reports/tests/testDebugUnitTest/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Instrumented Tests (emulator matrix, multiple API levels)
+  # ---------------------------------------------------------------------------
+  instrumented-tests:
+    name: Instrumented Tests (API ${{ matrix.api-level }})
+    runs-on: ubuntu-latest
+    needs: [ unit-tests ]
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -65,9 +111,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Enable KVM
         run: |
@@ -108,14 +151,12 @@ jobs:
           disable-animations: true
           script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
 
-      - name: Upload test results
+      - name: Upload instrumented test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nightly-test-results-api${{ matrix.api-level }}
-          path: |
-            app/build/reports/tests/
-            app/build/reports/androidTests/
+          name: nightly-instrumented-test-results-api${{ matrix.api-level }}
+          path: app/build/reports/androidTests/connected/
           retention-days: 7
 
   # ---------------------------------------------------------------------------
@@ -153,6 +194,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run benchmarks on emulator
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -161,7 +203,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=androidx.benchmark --stacktrace || true
+          script: ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=androidx.benchmark --stacktrace
 
       - name: Upload benchmark results
         if: always()
@@ -224,7 +266,7 @@ jobs:
     name: Nightly Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [ full-tests ]
+    needs: [ instrumented-tests ]
 
     steps:
       - name: Checkout repository
