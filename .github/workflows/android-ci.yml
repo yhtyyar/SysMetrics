@@ -1,9 +1,15 @@
 # =============================================================================
-# SysMetrics Pro — Android CI with TV Support
+# SysMetrics Pro — Android CI/CD Pipeline
 # =============================================================================
 # Triggers: push/PR to main
-# Jobs: lint, unit tests, instrumented tests (API 30, 33, 34), Android TV
-# Note: API 28 excluded due to emulator termination hang on CI runners
+# Jobs: Lint, Unit Tests, Instrumented Tests (Mobile Matrix), Android TV Tests
+#
+# Key Design Decisions:
+# - Matrix strategy for mobile devices (API 30, 33, 34) to ensure broad compatibility
+# - Dedicated Android TV job on API 34 with tv_1080p profile for leanback UI testing
+# - AVD caching to reduce emulator startup time (~2-3 min saved per run)
+# - Native C++ support via NDK (required for sysmetrics_native.so)
+# - API 28 excluded: known emulator termination hang on GitHub-hosted runners
 # =============================================================================
 
 name: Android CI
@@ -22,6 +28,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Gradle optimization flags to speed up builds
   GRADLE_OPTS: >-
     -Dorg.gradle.daemon=false
     -Dorg.gradle.parallel=true
@@ -33,6 +40,7 @@ env:
 jobs:
   # ---------------------------------------------------------------------------
   # Lint & Static Analysis
+  # Validates code quality before expensive emulator tests run
   # ---------------------------------------------------------------------------
   lint:
     name: Lint & Static Analysis
@@ -55,7 +63,7 @@ jobs:
       - name: Install NDK ${{ env.NDK_VERSION }}
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle
+      - name: Setup Gradle with caching
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -73,6 +81,7 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Unit Tests
+  # Fast feedback loop - runs before emulator tests
   # ---------------------------------------------------------------------------
   unit-tests:
     name: Unit Tests
@@ -95,7 +104,7 @@ jobs:
       - name: Install NDK ${{ env.NDK_VERSION }}
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle
+      - name: Setup Gradle with caching
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -112,7 +121,11 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Instrumented Tests Matrix (API 30, 33, 34)
+  # Instrumented Tests — Mobile Device Matrix
+  # Testing on representative API levels:
+  # - API 30: Android 11 (stable baseline, widely adopted)
+  # - API 33: Android 13 (modern, permission changes)
+  # - API 34: Android 14 (latest stable release)
   # ---------------------------------------------------------------------------
   instrumented-tests:
     name: Instrumented Tests (API ${{ matrix.api-level }})
@@ -120,7 +133,7 @@ jobs:
     timeout-minutes: 30
     needs: [ lint, unit-tests ]
     strategy:
-      fail-fast: false
+      fail-fast: false  # Run all matrix jobs even if one fails
       matrix:
         include:
           - api-level: 30
@@ -152,17 +165,42 @@ jobs:
       - name: Install NDK ${{ env.NDK_VERSION }}
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle
+      - name: Setup Gradle with caching
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      # Enable KVM acceleration for x86_64 emulator (critical for performance)
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      # Cache AVD to speed up subsequent runs (saves ~2-3 minutes)
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}-${{ github.run_id }}
+          restore-keys: |
+            avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}-
+
+      # Create AVD snapshot on cache miss for faster future runs
+      - name: Create AVD snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.30.1
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "AVD snapshot created"
 
       - name: Run instrumented tests (${{ matrix.name }})
         uses: reactivecircus/android-emulator-runner@v2.30.1
@@ -171,12 +209,13 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
+          # -no-snapshot-save: prevents hang on emulator termination
           emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
           emulator-boot-timeout: 300
           disable-animations: true
           script: |
             adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-            adb shell input keyevent 82
+            adb shell input keyevent 82  # Dismiss any keyguard
             ./gradlew :app:connectedDebugAndroidTest --stacktrace
 
       - name: Upload test results
@@ -190,11 +229,13 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Android TV Tests (Android 11 / API 30)
-  # google-tv system images available from API 30+
+  # Android TV Tests — API 34
+  # Uses google-tv target with tv_1080p profile for leanback UI testing.
+  # API 34 chosen for latest TV features (MediaSession improvements, picture-in-picture).
+  # Verifies ro.build.characteristics contains "tv" to ensure correct device type.
   # ---------------------------------------------------------------------------
   android-tv-tests:
-    name: Android TV Tests (API 30)
+    name: Android TV Tests (API 34)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ lint, unit-tests ]
@@ -215,7 +256,7 @@ jobs:
       - name: Install NDK ${{ env.NDK_VERSION }}
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle
+      - name: Setup Gradle with caching
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -227,47 +268,74 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run Android TV Emulator (API 30)
+      # Cache TV AVD separately from mobile AVDs
+      - name: AVD cache (Android TV)
+        uses: actions/cache@v4
+        id: avd-cache-tv
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-tv-34-google-tv-x86_64-${{ github.run_id }}
+          restore-keys: |
+            avd-tv-34-google-tv-x86_64-
+
+      - name: Create Android TV AVD snapshot
+        if: steps.avd-cache-tv.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.30.1
+        with:
+          api-level: 34
+          target: google-tv
+          profile: tv_1080p
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "Android TV AVD snapshot created"
+
+      - name: Run Android TV tests
         uses: reactivecircus/android-emulator-runner@v2.30.1
         timeout-minutes: 25
         with:
-          api-level: 30
+          api-level: 34
           target: google-tv
-          profile: "Android TV 1080p"
+          profile: tv_1080p
           arch: x86_64
           emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
           emulator-boot-timeout: 300
           disable-animations: true
           script: |
-            echo "=== Verifying TV device ==="
+            echo "=== Verifying Android TV device ==="
             adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
             sleep 3
             
             TV_CHARS=$(adb shell getprop ro.build.characteristics)
             echo "Device characteristics: $TV_CHARS"
             
+            # Fail fast if not running on TV device
             if echo "$TV_CHARS" | grep -q "tv"; then
-              echo "✓ TV device confirmed"
+              echo "✓ Android TV device confirmed"
             else
-              echo "✗ ERROR: Not a TV device (characteristics: $TV_CHARS)"
+              echo "✗ ERROR: Expected TV device, got: $TV_CHARS"
               exit 1
             fi
             
             echo "=== Running instrumented tests on Android TV ==="
             ./gradlew :app:connectedDebugAndroidTest --stacktrace
 
-      - name: Upload TV test results
+      - name: Upload Android TV test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-tv-test-results
+          name: android-tv-test-results-api34
           path: |
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Debug APK Build (includes native C++ for all ABIs)
+  # Debug APK Build
+  # Final artifact generation — only runs if all tests pass
+  # Verifies native libraries are present for all target ABIs
   # ---------------------------------------------------------------------------
   build-debug:
     name: Build Debug APK
@@ -291,7 +359,7 @@ jobs:
       - name: Install NDK ${{ env.NDK_VERSION }}
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle
+      - name: Setup Gradle with caching
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -299,9 +367,9 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Verify native libraries
+      - name: Verify native libraries for all ABIs
         run: |
-          echo "=== Checking native libraries in APK ==="
+          echo "=== Verifying native libraries in APK ==="
           for abi in armeabi-v7a arm64-v8a x86 x86_64; do
             if unzip -l app/build/outputs/apk/debug/*.apk | grep -q "lib/${abi}/libsysmetrics_native.so"; then
               echo "✓ ${abi}: libsysmetrics_native.so found"
