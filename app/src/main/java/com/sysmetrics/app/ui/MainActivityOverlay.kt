@@ -27,6 +27,9 @@ import com.sysmetrics.app.core.di.DefaultDispatcherProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.sysmetrics.app.utils.DeviceUtils
+import android.app.UiModeManager
+import android.content.res.Configuration
 
 /**
  * Main Activity - Optimized UX
@@ -42,6 +45,7 @@ class MainActivityOverlay : AppCompatActivity() {
     private lateinit var metricsCollector: MetricsCollector
     private lateinit var networkStatsDataSource: NetworkStatsDataSource
     private lateinit var systemDataSource: SystemDataSource
+    private lateinit var deviceUtils: DeviceUtils
     private var isOverlayActive = false
     
     private val handler = Handler(Looper.getMainLooper())
@@ -64,11 +68,15 @@ class MainActivityOverlay : AppCompatActivity() {
         // Initialize dependencies from AppContainer
         val appContainer = (application as SysMetricsApplication).appContainer
         metricsCollector = appContainer.metricsCollector
+        deviceUtils = appContainer.deviceUtils
         
         // Initialize data sources
         val dispatcherProvider = DefaultDispatcherProvider()
         networkStatsDataSource = NetworkStatsDataSource(dispatcherProvider)
         systemDataSource = SystemDataSource(dispatcherProvider)
+        
+        // Log device info for debugging
+        Timber.d("Device info: ${deviceUtils.getDeviceInfo()}")
         
         setupUI()
         checkServiceStatus()
@@ -293,8 +301,17 @@ class MainActivityOverlay : AppCompatActivity() {
 
     /**
      * Request overlay permission from user
+     * On Android TV, directly start overlay as permission is not required
      */
     private fun requestOverlayPermission() {
+        // On TV devices, permission is automatically granted - just start overlay
+        if (isTvDevice()) {
+            Timber.i("TV device - starting overlay without permission request")
+            startOverlay()
+            return
+        }
+        
+        // For mobile devices, show permission dialog
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.overlay_permission_required)
             .setMessage(R.string.overlay_permission_message)
@@ -310,11 +327,28 @@ class MainActivityOverlay : AppCompatActivity() {
      */
     private fun openOverlaySettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
+            try {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            } catch (e: android.content.ActivityNotFoundException) {
+                Timber.w(e, "Overlay settings not available, opening app settings")
+                try {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                } catch (e2: Exception) {
+                    Timber.e(e2, "Failed to open app settings")
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Settings Unavailable")
+                        .setMessage("Unable to open settings. Please enable overlay permission manually in system settings.")
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+                }
+            }
         }
     }
 
@@ -366,13 +400,30 @@ class MainActivityOverlay : AppCompatActivity() {
 
     /**
      * Check if overlay permission is granted
+     * On Android TV, overlay permission is automatically granted and doesn't require user action
      */
     private fun hasOverlayPermission(): Boolean {
+        // Android TV devices don't need overlay permission request
+        if (isTvDevice()) {
+            Timber.d("TV device detected - overlay permission automatically granted")
+            return true
+        }
+        
+        // For mobile devices, check standard permission
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(this)
         } else {
             true
         }
+    }
+    
+    /**
+     * Check if device is Android TV
+     */
+    private fun isTvDevice(): Boolean {
+        val uiModeManager = getSystemService(UI_MODE_SERVICE) as? UiModeManager
+        val uiMode = uiModeManager?.currentModeType ?: Configuration.UI_MODE_TYPE_NORMAL
+        return uiMode == Configuration.UI_MODE_TYPE_TELEVISION
     }
 
     /**
