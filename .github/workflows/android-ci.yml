@@ -229,13 +229,13 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Android TV Tests — API 34
-  # Uses google-tv target with tv_1080p profile for leanback UI testing.
-  # API 34 chosen for latest TV features (MediaSession improvements, picture-in-picture).
+  # Android TV Tests — API 33
+  # Uses google-tv target with "Android TV 1080p" profile for leanback UI testing.
+  # API 33 chosen as stable TV platform (Android 13 TV with mature google-tv image).
   # Verifies ro.build.characteristics contains "tv" to ensure correct device type.
   # ---------------------------------------------------------------------------
   android-tv-tests:
-    name: Android TV Tests (API 34)
+    name: Android TV Tests (API 33)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ lint, unit-tests ]
@@ -276,17 +276,17 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-tv-34-google-tv-x86_64-${{ github.run_id }}
+          key: avd-tv-33-google-tv-x86_64-${{ github.run_id }}
           restore-keys: |
-            avd-tv-34-google-tv-x86_64-
+            avd-tv-33-google-tv-x86_64-
 
       - name: Create Android TV AVD snapshot
         if: steps.avd-cache-tv.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2.30.1
         with:
-          api-level: 34
+          api-level: 33
           target: google-tv
-          profile: tv_1080p
+          profile: "Android TV 1080p"
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
@@ -296,9 +296,9 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2.30.1
         timeout-minutes: 25
         with:
-          api-level: 34
+          api-level: 33
           target: google-tv
-          profile: tv_1080p
+          profile: "Android TV 1080p"
           arch: x86_64
           emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
           emulator-boot-timeout: 300
@@ -326,7 +326,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-tv-test-results-api34
+          name: android-tv-test-results-api33
           path: |
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
