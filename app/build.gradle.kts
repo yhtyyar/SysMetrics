@@ -185,6 +185,12 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+
+    // Kaspresso - UI Testing Framework
+    androidTestImplementation("com.kaspersky.android-components:kaspresso:1.5.0")
+    androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.5.0")
+    androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.5.0")
 
     // Benchmark Testing
     androidTestImplementation("androidx.benchmark:benchmark-junit4:1.2.2")

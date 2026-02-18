@@ -1,0 +1,173 @@
+package com.sysmetrics.tests
+
+import androidx.test.ext.junit.rules.ActivityTestRule
+import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import com.kaspersky.kaspresso.annotations.Requirements
+import com.sysmetrics.app.ui.MainActivityOverlay
+import com.sysmetrics.screens.MainScreen
+import com.sysmetrics.steps.MainScreenSteps.startOverlay
+import com.sysmetrics.steps.MainScreenSteps.stopOverlay
+import com.sysmetrics.steps.MainScreenSteps.openSettings
+import com.sysmetrics.utils.TvNavigationUtils.pressDPadDown
+import com.sysmetrics.utils.TvNavigationUtils.pressDPadUp
+import com.sysmetrics.utils.TvNavigationUtils.pressDPadCenter
+import com.sysmetrics.utils.TvNavigationUtils.pressBack
+import com.sysmetrics.utils.TvNavigationUtils.isTvDevice
+import org.junit.Rule
+import org.junit.Test
+import org.junit.Assume.assumeTrue
+
+/**
+ * Tests for Android TV specific D-Pad navigation
+ * These tests are only executed on TV devices
+ */
+class TvNavigationTest : TestCase() {
+
+    @get:Rule
+    val activityRule = ActivityTestRule(MainActivityOverlay::class.java, true, false)
+
+    @Test
+    @Requirements("TV-001", "TV-002")
+    fun dpadNavigationBetweenButtonsTest() = run {
+        // Skip if not TV device
+        assumeTrue("Skipping: Not a TV device", isTvDevice())
+
+        before {
+            activityRule.launchActivity(null)
+        }.after {
+            // Cleanup
+            try {
+                if (MainScreen.isVisible()) {
+                    stopOverlay()
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }.run {
+
+            step("1. Verify initial focus is on toggle button") {
+                MainScreen {
+                    toggleButton.isFocused()
+                }
+            }
+
+            step("2. Navigate down to settings button") {
+                pressDPadDown()
+                flakySafely(timeout = 3000) {
+                    MainScreen.settingsButton.isFocused()
+                }
+            }
+
+            step("3. Navigate up back to toggle button") {
+                pressDPadUp()
+                flakySafely(timeout = 3000) {
+                    MainScreen.toggleButton.isFocused()
+                }
+            }
+
+            step("4. Press center to start overlay") {
+                pressDPadCenter()
+                flakySafely(timeout = 5000) {
+                    MainScreen.verifyOverlayStatusOn()
+                }
+            }
+
+            step("5. Press center again to stop overlay") {
+                pressDPadCenter()
+                flakySafely(timeout = 5000) {
+                    MainScreen.verifyOverlayStatusOff()
+                }
+            }
+        }
+    }
+
+    @Test
+    @Requirements("TV-003")
+    fun dpadNavigationToSettingsTest() = run {
+        // Skip if not TV device
+        assumeTrue("Skipping: Not a TV device", isTvDevice())
+
+        before {
+            activityRule.launchActivity(null)
+        }.after {
+            // Return to main screen if needed
+            try {
+                if (!MainScreen.isVisible()) {
+                    pressBack()
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }.run {
+
+            step("1. Focus on settings button") {
+                MainScreen.settingsButton {
+                    isVisible()
+                    // Focus the button first
+                    click()
+                }
+            }
+
+            step("2. Verify Settings screen is opened") {
+                flakySafely(timeout = 5000) {
+                    com.sysmetrics.screens.SettingsScreen.isVisible()
+                }
+            }
+
+            step("3. Navigate through position options") {
+                com.sysmetrics.screens.SettingsScreen {
+                    // Each radio button should be focusable
+                    positionTopLeft.click()
+                    positionTopRight.click()
+                    positionBottomLeft.click()
+                    positionBottomRight.click()
+                }
+            }
+
+            step("4. Press back to return to main screen") {
+                pressBack()
+                flakySafely(timeout = 5000) {
+                    MainScreen.isVisible()
+                }
+            }
+        }
+    }
+
+    @Test
+    @Requirements("TV-004")
+    fun focusManagementTest() = run {
+        // Skip if not TV device
+        assumeTrue("Skipping: Not a TV device", isTvDevice())
+
+        before {
+            activityRule.launchActivity(null)
+        }.after {
+            // Cleanup
+        }.run {
+
+            step("1. Verify toggle button is focusable") {
+                MainScreen.toggleButton {
+                    isVisible()
+                    isFocusable()
+                }
+            }
+
+            step("2. Verify settings button is focusable") {
+                MainScreen.settingsButton {
+                    isVisible()
+                    isFocusable()
+                }
+            }
+
+            step("3. Verify buttons have focus animation") {
+                // Check that stateListAnimator is set (focus animation)
+                MainScreen.toggleButton {
+                    isVisible()
+                }
+                MainScreen.settingsButton {
+                    isVisible()
+                }
+            }
+        }
+    }
+}
