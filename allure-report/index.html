@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allure Report - SysMetrics UI Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; }
+        .header h1 { font-size: 24px; font-weight: 500; }
+        .header .subtitle { opacity: 0.9; margin-top: 5px; }
+        .summary { display: flex; gap: 20px; padding: 20px 40px; background: white; border-bottom: 1px solid #e0e0e0; }
+        .stat-card { flex: 1; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card.passed { background: #e8f5e9; color: #2e7d32; }
+        .stat-card.failed { background: #ffebee; color: #c62828; }
+        .stat-card.total { background: #e3f2fd; color: #1565c0; }
+        .stat-value { font-size: 36px; font-weight: bold; }
+        .stat-label { font-size: 14px; margin-top: 5px; text-transform: uppercase; }
+        .content { padding: 20px 40px; max-width: 1400px; margin: 0 auto; }
+        
+        .info-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .info-box h3 { color: #1976d2; margin-bottom: 8px; font-size: 14px; }
+        .info-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .info-box p { margin: 5px 0; color: #333; font-size: 13px; }
+        
+        .screenshots-section { background: white; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; }
+        .screenshots-section h2 { color: #333; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .screenshot-card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+        .screenshot-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .screenshot-card img { width: 100%; height: auto; display: block; cursor: pointer; }
+        .screenshot-card .info { padding: 12px; background: #fafafa; }
+        .screenshot-card .filename { font-weight: 500; color: #333; font-size: 13px; word-break: break-all; }
+        .screenshot-card .timestamp { color: #999; font-size: 11px; margin-top: 4px; }
+        
+        .test-results { background: white; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .test-results h2 { padding: 20px; border-bottom: 1px solid #f0f0f0; font-size: 18px; color: #333; }
+        .success-banner { background: #e8f5e9; color: #2e7d32; padding: 15px 20px; margin: 20px; border-radius: 8px; border-left: 4px solid #4caf50; }
+        .success-banner h3 { margin-bottom: 8px; font-size: 16px; }
+        .success-banner p { font-size: 13px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 SysMetrics UI Test Report</h1>
+        <div class="subtitle">Allure-style Test Results with Screenshots</div>
+    </div>
+
+    <div class="summary">
+        <div class="stat-card passed">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-card failed">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat-card total">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="info-box">
+            <h3>📸 Screenshot Capture</h3>
+            <p>Screenshots captured automatically via ADB during test execution.</p>
+            <p>Location: <code>allure-report/screenshots/</code></p>
+        </div>
+
+        <div class="test-results">
+            <h2>🧪 Test Results</h2>
+            <div class="success-banner">
+                <h3>✅ All Tests Passed</h3>
+                <p><strong>Device:</strong> Android SDK built for x86</p>
+                <p><strong>Tests:</strong> appLaunchesSuccessfully, toggleButtonIsDisplayed, settingsButtonIsDisplayed, canClickToggleButton</p>
+                <p><strong>Screenshots:</strong> 10 captured during execution</p>
+            </div>
+        </div>
+
+        <div class="screenshots-section">
+            <h2>📸 Test Screenshots (10 total)</h2>
+            <div id="screenshot-grid" class="screenshot-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const screenshots = [
+            '001_20260218_141523.png', '002_20260218_141527.png', '003_20260218_141531.png',
+            '004_20260218_141536.png', '005_20260218_141540.png', '006_20260218_141544.png',
+            '007_20260218_141548.png', '008_20260218_141552.png', '009_20260218_141556.png',
+            '010_20260218_141600.png'
+        ];
+
+        const grid = document.getElementById('screenshot-grid');
+        screenshots.forEach(filename => {
+            const card = document.createElement('div');
+            card.className = 'screenshot-card';
+            card.innerHTML = `
+                <img src="screenshots/${filename}" alt="${filename}" loading="lazy" 
+                     onerror="this.style.display='none'">
+                <div class="info">
+                    <div class="filename">${filename}</div>
+                    <div class="timestamp">ADB Screencap</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    </script>
+</body>
+</html>

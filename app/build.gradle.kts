@@ -188,9 +188,16 @@ dependencies {
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 
     // Kaspresso - UI Testing Framework
-    androidTestImplementation("com.kaspersky.android-components:kaspresso:1.5.0")
-    androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.5.0")
-    androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.5.0")
+    androidTestImplementation("com.kaspersky.android-components:kaspresso:1.5.0") {
+        exclude(group = "kaspresso-framework", module = "kaspresso")
+    }
+    androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.5.0") {
+        exclude(group = "kaspresso-framework", module = "kaspresso")
+    }
+    androidTestImplementation("io.qameta.allure:allure-kotlin-model:2.4.0")
+    androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.5.0") {
+        exclude(group = "kaspresso-framework", module = "kaspresso")
+    }
 
     // Benchmark Testing
     androidTestImplementation("androidx.benchmark:benchmark-junit4:1.2.2")

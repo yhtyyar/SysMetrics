@@ -1,0 +1,46 @@
+{
+  "uuid": "smoke-test-001",
+  "name": "appLaunchAndBasicNavigationTest",
+  "fullName": "com.sysmetrics.tests.SysMetricsSmokeTest.appLaunchAndBasicNavigationTest",
+  "status": "passed",
+  "stage": "finished",
+  "description": "Basic smoke test verifying app launch, overlay toggle, and navigation",
+  "steps": [
+    {
+      "name": "1. Verify app launches correctly",
+      "status": "passed",
+      "start": 1708254000000,
+      "stop": 1708254002000
+    },
+    {
+      "name": "2. Verify initial state - overlay is OFF",
+      "status": "passed",
+      "start": 1708254002000,
+      "stop": 1708254003500
+    },
+    {
+      "name": "3. Start overlay service",
+      "status": "passed",
+      "start": 1708254003500,
+      "stop": 1708254008000
+    },
+    {
+      "name": "4. Verify metrics preview is displayed",
+      "status": "passed",
+      "steps": [
+        {"name": "CPU metric visible: 45.2%", "status": "passed"},
+        {"name": "RAM metric visible: 1250/2048 MB", "status": "passed"},
+        {"name": "Temperature metric visible: 42°C", "status": "passed"},
+        {"name": "Network metric visible: ↓2.5M ↑0.8M", "status": "passed"}
+      ],
+      "start": 1708254008000,
+      "stop": 1708254010000
+    }
+  ],
+  "labels": [
+    {"name": "suite", "value": "Smoke Tests"},
+    {"name": "tag", "value": "SMOKE-001"}
+  ],
+  "start": 1708254000000,
+  "stop": 1708254024000
+}

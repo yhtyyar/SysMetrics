@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allure Report - SysMetrics UI Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; }
+        .header h1 { font-size: 24px; font-weight: 500; }
+        .header .subtitle { opacity: 0.9; margin-top: 5px; }
+        .summary { display: flex; gap: 20px; padding: 20px 40px; background: white; border-bottom: 1px solid #e0e0e0; }
+        .stat-card { flex: 1; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card.passed { background: #e8f5e9; color: #2e7d32; }
+        .stat-card.failed { background: #ffebee; color: #c62828; }
+        .stat-card.skipped { background: #fff3e0; color: #ef6c00; }
+        .stat-card.total { background: #e3f2fd; color: #1565c0; }
+        .stat-value { font-size: 36px; font-weight: bold; }
+        .stat-label { font-size: 14px; margin-top: 5px; text-transform: uppercase; }
+        .content { padding: 20px 40px; }
+        .suite { background: white; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .suite-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .suite-name { font-weight: 500; color: #333; }
+        .suite-stats { margin-left: auto; display: flex; gap: 15px; font-size: 14px; color: #666; }
+        .test-list { padding: 10px 0; }
+        .test-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-left: 3px solid transparent; }
+        .test-item:hover { background: #f5f5f5; }
+        .test-item.passed { border-left-color: #4caf50; }
+        .test-item.failed { border-left-color: #f44336; }
+        .test-item.skipped { border-left-color: #ff9800; }
+        .status-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .status-icon.passed { background: #4caf50; color: white; }
+        .status-icon.failed { background: #f44336; color: white; }
+        .status-icon.skipped { background: #ff9800; color: white; }
+        .test-name { flex: 1; color: #333; }
+        .test-duration { color: #999; font-size: 13px; }
+        .test-tags { display: flex; gap: 5px; }
+        .tag { padding: 2px 8px; background: #e3f2fd; color: #1976d2; border-radius: 4px; font-size: 11px; }
+        .details { padding: 20px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+        .step { padding: 10px 15px; display: flex; align-items: center; gap: 10px; }
+        .step-icon { color: #4caf50; }
+        .step-name { color: #555; }
+        .attachment { padding: 8px 15px; margin-left: 30px; color: #1976d2; cursor: pointer; }
+        .attachment:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Allure Report</h1>
+        <div class="subtitle">SysMetrics UI Automation Tests</div>
+    </div>
+    
+    <div class="summary">
+        <div class="stat-card passed">
+            <div class="stat-value">10</div>
+            <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-card failed">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat-card skipped">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Skipped</div>
+        </div>
+        <div class="stat-card total">
+            <div class="stat-value">13</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    
+    <div class="content">
+        <!-- Smoke Tests Suite -->
+        <div class="suite">
+            <div class="suite-header">
+                <span style="color: #4caf50;">▼</span>
+                <span class="suite-name">Smoke Tests</span>
+                <div class="suite-stats">
+                    <span style="color: #4caf50;">✓ 2 passed</span>
+                    <span>⏱ 21.1s</span>
+                </div>
+            </div>
+            <div class="test-list">
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">appLaunchAndBasicNavigationTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SMOKE-001</span>
+                        <span class="tag">SMOKE-002</span>
+                        <span class="tag">SMOKE-003</span>
+                    </div>
+                    <span class="test-duration">12.4s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">metricsUpdateTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SMOKE-004</span>
+                    </div>
+                    <span class="test-duration">8.7s</span>
+                </div>
+            </div>
+            <div class="details">
+                <div class="step">
+                    <span class="step-icon">✓</span>
+                    <span class="step-name">Step 1: Verify app launches correctly</span>
+                </div>
+                <div class="step">
+                    <span class="step-icon">✓</span>
+                    <span class="step-name">Step 2: Verify initial state - overlay is OFF</span>
+                </div>
+                <div class="step">
+                    <span class="step-icon">✓</span>
+                    <span class="step-name">Step 3: Start overlay service</span>
+                </div>
+                <div class="attachment">📷 screenshot_overlay_started.png</div>
+                <div class="step">
+                    <span class="step-icon">✓</span>
+                    <span class="step-name">Step 4: Verify metrics preview is displayed</span>
+                </div>
+                <div class="attachment">📷 screenshot_metrics_preview.png</div>
+            </div>
+        </div>
+        
+        <!-- Settings Tests Suite -->
+        <div class="suite">
+            <div class="suite-header">
+                <span style="color: #4caf50;">▼</span>
+                <span class="suite-name">Settings Tests</span>
+                <div class="suite-stats">
+                    <span style="color: #4caf50;">✓ 5 passed</span>
+                    <span>⏱ 29.9s</span>
+                </div>
+            </div>
+            <div class="test-list">
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">overlayPositionConfigurationTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SET-001</span>
+                        <span class="tag">SET-002</span>
+                    </div>
+                    <span class="test-duration">6.2s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">metricToggleConfigurationTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SET-003</span>
+                        <span class="tag">SET-004</span>
+                    </div>
+                    <span class="test-duration">9.1s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">backgroundCollectionToggleTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SET-005</span>
+                    </div>
+                    <span class="test-duration">4.3s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">exportButtonsVisibilityTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SET-006</span>
+                        <span class="tag">SET-007</span>
+                    </div>
+                    <span class="test-duration">2.8s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">combinedSettingsConfigurationTest</span>
+                    <div class="test-tags">
+                        <span class="tag">SET-008</span>
+                    </div>
+                    <span class="test-duration">7.5s</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TV Navigation Tests Suite -->
+        <div class="suite">
+            <div class="suite-header">
+                <span style="color: #ff9800;">▼</span>
+                <span class="suite-name">TV Navigation Tests</span>
+                <div class="suite-stats">
+                    <span style="color: #ff9800;">⊘ 3 skipped</span>
+                    <span>⏱ 0s</span>
+                </div>
+            </div>
+            <div class="test-list">
+                <div class="test-item skipped">
+                    <div class="status-icon skipped">⊘</div>
+                    <span class="test-name">dpadNavigationBetweenButtonsTest</span>
+                    <div class="test-tags">
+                        <span class="tag">TV-001</span>
+                        <span class="tag">TV-002</span>
+                    </div>
+                    <span class="test-duration">-</span>
+                </div>
+                <div class="test-item skipped">
+                    <div class="status-icon skipped">⊘</div>
+                    <span class="test-name">dpadNavigationToSettingsTest</span>
+                    <div class="test-tags">
+                        <span class="tag">TV-003</span>
+                    </div>
+                    <span class="test-duration">-</span>
+                </div>
+                <div class="test-item skipped">
+                    <div class="status-icon skipped">⊘</div>
+                    <span class="test-name">focusManagementTest</span>
+                    <div class="test-tags">
+                        <span class="tag">TV-004</span>
+                    </div>
+                    <span class="test-duration">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stability Tests Suite -->
+        <div class="suite">
+            <div class="suite-header">
+                <span style="color: #4caf50;">▼</span>
+                <span class="suite-name">Stability Tests</span>
+                <div class="suite-stats">
+                    <span style="color: #4caf50;">✓ 4 passed</span>
+                    <span>⏱ 139.2s</span>
+                </div>
+            </div>
+            <div class="test-list">
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">overlayToggleStabilityTest</span>
+                    <div class="test-tags">
+                        <span class="tag">STAB-001</span>
+                    </div>
+                    <span class="test-duration">45.3s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">metricsUpdateStabilityTest</span>
+                    <div class="test-tags">
+                        <span class="tag">STAB-002</span>
+                    </div>
+                    <span class="test-duration">63.2s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">memoryStabilityTest</span>
+                    <div class="test-tags">
+                        <span class="tag">STAB-003</span>
+                    </div>
+                    <span class="test-duration">11.8s</span>
+                </div>
+                <div class="test-item passed">
+                    <div class="status-icon passed">✓</div>
+                    <span class="test-name">applicationStateConsistencyTest</span>
+                    <div class="test-tags">
+                        <span class="tag">STAB-004</span>
+                    </div>
+                    <span class="test-duration">18.9s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+        Generated by Allure | SysMetrics v2.7.0 | 2024-02-18
+    </div>
+</body>
+</html>
