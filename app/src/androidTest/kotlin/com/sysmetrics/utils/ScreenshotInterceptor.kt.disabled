@@ -1,9 +1,9 @@
 package com.sysmetrics.utils
 
-import com.kaspersky.kaspresso.interceptors.watcher.testcase.TestRunWatcherInterceptor
-import com.kaspersky.kaspresso.kaspresso.Kaspresso
-import com.kaspersky.kaspresso.params.ScreenshotParams
-import com.kaspersky.kaspresso.testcases.models.info.TestInfo
+import com.kaspersky.components.kaspresso.interceptors.watcher.testcase.TestRunWatcherInterceptor
+import com.kaspersky.components.kaspresso.kaspresso.Kaspresso
+import com.kaspersky.components.kaspresso.params.ScreenshotParams
+import com.kaspersky.components.kaspresso.testcases.models.info.TestInfo
 import timber.log.Timber
 
 /**

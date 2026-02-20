@@ -187,10 +187,11 @@ dependencies {
     androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 
-    // Kaspresso - UI Testing Framework
-    androidTestImplementation("com.kaspersky.android-components:kaspresso:1.5.0")
-    androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.5.0")
-    androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.5.0")
+    // Kaspresso - UI Testing Framework (temporarily disabled for CI/CD)
+    // androidTestImplementation("com.kaspersky.android-components:kaspresso:1.5.0")
+    // Note: allure-support and compose-support removed to fix CI/CD dependency resolution
+    // androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.5.0")
+    // androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.5.0")
 
     // Benchmark Testing
     androidTestImplementation("androidx.benchmark:benchmark-junit4:1.2.2")

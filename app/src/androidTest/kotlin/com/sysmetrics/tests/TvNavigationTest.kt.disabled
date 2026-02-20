@@ -1,8 +1,9 @@
 package com.sysmetrics.tests
 
 import androidx.test.ext.junit.rules.ActivityTestRule
-import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import com.kaspersky.kaspresso.annotations.Requirements
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
+import com.kaspersky.components.kaspresso.testcases.api.testcase.TestCase
 import com.sysmetrics.app.ui.MainActivityOverlay
 import com.sysmetrics.screens.MainScreen
 import com.sysmetrics.steps.MainScreenSteps.startOverlay
@@ -16,18 +17,25 @@ import com.sysmetrics.utils.TvNavigationUtils.isTvDevice
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assume.assumeTrue
+import org.junit.runner.RunWith
 
 /**
  * Tests for Android TV specific D-Pad navigation
  * These tests are only executed on TV devices
  */
+@RunWith(AndroidJUnit4::class)
 class TvNavigationTest : TestCase() {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    )
+
+    @get:Rule(order = 1)
     val activityRule = ActivityTestRule(MainActivityOverlay::class.java, true, false)
 
     @Test
-    @Requirements("TV-001", "TV-002")
     fun dpadNavigationBetweenButtonsTest() = run {
         // Skip if not TV device
         assumeTrue("Skipping: Not a TV device", isTvDevice())
@@ -82,7 +90,6 @@ class TvNavigationTest : TestCase() {
     }
 
     @Test
-    @Requirements("TV-003")
     fun dpadNavigationToSettingsTest() = run {
         // Skip if not TV device
         assumeTrue("Skipping: Not a TV device", isTvDevice())
@@ -134,7 +141,6 @@ class TvNavigationTest : TestCase() {
     }
 
     @Test
-    @Requirements("TV-004")
     fun focusManagementTest() = run {
         // Skip if not TV device
         assumeTrue("Skipping: Not a TV device", isTvDevice())

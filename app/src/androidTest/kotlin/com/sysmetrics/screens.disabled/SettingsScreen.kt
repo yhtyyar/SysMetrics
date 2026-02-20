@@ -1,7 +1,7 @@
 package com.sysmetrics.screens
 
-import com.kaspersky.kaspresso.screens.KScreen
-import com.kaspersky.kaspresso.testcases.core.testcontext.TestContext
+import com.kaspersky.components.kaspresso.screens.KScreen
+import com.kaspersky.components.kaspresso.testcases.core.testcontext.TestContext
 import io.github.kakaocup.kakao.common.views.KView
 import io.github.kakaocup.kakao.text.KTextView
 import io.github.kakaocup.kakao.text.KButton

@@ -4,7 +4,7 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.res.Configuration
 import androidx.test.platform.app.InstrumentationRegistry
-import com.kaspersky.kaspresso.testcases.core.testcontext.TestContext
+import com.kaspersky.components.kaspresso.testcases.core.testcontext.TestContext
 import timber.log.Timber
 
 /**

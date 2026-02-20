@@ -1,8 +1,9 @@
 package com.sysmetrics.tests
 
 import androidx.test.ext.junit.rules.ActivityTestRule
-import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import com.kaspersky.kaspresso.annotations.Requirements
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
+import com.kaspersky.components.kaspresso.testcases.api.testcase.TestCase
 import com.sysmetrics.app.ui.MainActivityOverlay
 import com.sysmetrics.screens.MainScreen
 import com.sysmetrics.screens.SettingsScreen
@@ -15,18 +16,25 @@ import com.sysmetrics.steps.SettingsScreenSteps.setBackgroundCollection
 import com.sysmetrics.steps.SettingsScreenSteps.saveAndReturn
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Tests for Settings screen functionality
  * Covers position configuration, metric toggles, and export functionality
  */
+@RunWith(AndroidJUnit4::class)
 class SettingsTest : TestCase() {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    )
+
+    @get:Rule(order = 1)
     val activityRule = ActivityTestRule(MainActivityOverlay::class.java, true, false)
 
     @Test
-    @Requirements("SET-001", "SET-002")
     fun overlayPositionConfigurationTest() = run {
         before {
             activityRule.launchActivity(null)
@@ -69,7 +77,6 @@ class SettingsTest : TestCase() {
     }
 
     @Test
-    @Requirements("SET-003", "SET-004")
     fun metricToggleConfigurationTest() = run {
         before {
             activityRule.launchActivity(null)
@@ -121,7 +128,6 @@ class SettingsTest : TestCase() {
     }
 
     @Test
-    @Requirements("SET-005")
     fun backgroundCollectionToggleTest() = run {
         before {
             activityRule.launchActivity(null)
@@ -157,7 +163,6 @@ class SettingsTest : TestCase() {
     }
 
     @Test
-    @Requirements("SET-006", "SET-007")
     fun exportButtonsVisibilityTest() = run {
         before {
             activityRule.launchActivity(null)
@@ -186,7 +191,6 @@ class SettingsTest : TestCase() {
     }
 
     @Test
-    @Requirements("SET-008")
     fun combinedSettingsConfigurationTest() = run {
         before {
             activityRule.launchActivity(null)

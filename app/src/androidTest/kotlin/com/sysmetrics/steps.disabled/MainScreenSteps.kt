@@ -1,6 +1,6 @@
 package com.sysmetrics.steps
 
-import com.kaspersky.kaspresso.testcases.core.testcontext.TestContext
+import com.kaspersky.components.kaspresso.testcases.core.testcontext.TestContext
 import com.sysmetrics.screens.MainScreen
 import com.sysmetrics.utils.TvNavigationUtils.isTvDevice
 import com.sysmetrics.utils.pressDPadCenter
