@@ -48,7 +48,7 @@ cd SysMetrics
 # Debug APK
 ./gradlew assembleDebug
 
-# Release APK (requires signing — see CONTRIBUTING.md)
+# Release APK (requires signing — see docs/contributing/CONTRIBUTING.md)
 ./gradlew assembleRelease
 
 # Unit tests
@@ -60,6 +60,8 @@ cd SysMetrics
 # Lint
 ./gradlew :app:lintDebug
 ```
+
+> **Note on Testing**: Main branch uses stable Espresso tests (CI/CD ready). Kaspresso infrastructure is maintained in `feature/kaspresso-testing` branch. See [CI/CD Solution Summary](docs/ci-cd/CI_CD_SOLUTION_SUMMARY.md) for details.
 
 ## Architecture
 
@@ -85,8 +87,8 @@ Widget                                      Native C++ (JNI)
 | Component | Technology |
 |-----------|------------|
 | Language | Kotlin 1.9.20, C++17 |
-| SDK | Min 21, Target 34 |
-| DI | Hilt 2.48 (KSP) |
+| SDK | Min 21, Target 35 |
+| DI | Hilt 2.48 (KSP) + AppContainer (manual DI, transition phase) |
 | Database | Room 2.6.1 (KSP) |
 | Async | Coroutines + Flow |
 | Background | WorkManager 2.9.0 |
@@ -136,9 +138,9 @@ app/src/main/
 
 Contributions are welcome! Please read:
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, code standards, commit style
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — community guidelines
-- [SECURITY.md](SECURITY.md) — vulnerability reporting
+- [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) — setup, code standards, commit style
+- [CODE_OF_CONDUCT.md](docs/contributing/CODE_OF_CONDUCT.md) — community guidelines
+- [SECURITY.md](docs/project/SECURITY.md) — vulnerability reporting
 
 This project uses [Conventional Commits](https://conventionalcommits.org) with Android module scopes (e.g., `feat(overlay):`, `fix(native):`).
 
@@ -146,11 +148,11 @@ This project uses [Conventional Commits](https://conventionalcommits.org) with A
 
 | Document | Description |
 |----------|-------------|
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, development setup |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Code standards, templates, debugging |
-| [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
-| [REQUIREMENTS.md](REQUIREMENTS.md) | Product requirements |
-| [SECURITY.md](SECURITY.md) | Security policy and vulnerability reporting |
+| [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) | How to contribute, development setup |
+| [DEVELOPMENT.md](docs/contributing/DEVELOPMENT.md) | Code standards, templates, debugging |
+| [CHANGELOG.md](docs/project/CHANGELOG.md) | Version history and release notes |
+| [REQUIREMENTS.md](docs/project/REQUIREMENTS.md) | Product requirements |
+| [SECURITY.md](docs/project/SECURITY.md) | Security policy and vulnerability reporting |
 
 ## License
 

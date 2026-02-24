@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.sysmetrics.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.sysmetrics.app"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 9
         versionName = "2.7.0"
 

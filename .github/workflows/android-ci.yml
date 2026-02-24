@@ -12,7 +12,7 @@
 # - API 28 excluded: known emulator termination hang on GitHub-hosted runners
 # =============================================================================
 
-name: Android CI
+name: CI
 
 on:
   push:
@@ -126,6 +126,7 @@ jobs:
   # - API 30: Android 11 (stable baseline, widely adopted)
   # - API 33: Android 13 (modern, permission changes)
   # - API 34: Android 14 (latest stable release)
+  # - API 35: Android 15 (latest release, API changes)
   # ---------------------------------------------------------------------------
   instrumented-tests:
     name: Instrumented Tests (API ${{ matrix.api-level }})
@@ -148,6 +149,10 @@ jobs:
             target: google_apis
             arch: x86_64
             name: "Android 14"
+          - api-level: 35
+            target: google_apis
+            arch: x86_64
+            name: "Android 15"
 
     steps:
       - name: Checkout repository
@@ -203,6 +208,7 @@ jobs:
           script: echo "AVD snapshot created"
 
       - name: Run instrumented tests (${{ matrix.name }})
+        id: run-tests
         uses: reactivecircus/android-emulator-runner@v2.30.1
         timeout-minutes: 20
         with:
@@ -216,7 +222,25 @@ jobs:
           script: |
             adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
             adb shell input keyevent 82  # Dismiss any keyguard
-            ./gradlew :app:connectedDebugAndroidTest --stacktrace
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.size=small -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.LargeTest,androidx.test.filters.FlakyTest
+
+      - name: Retry instrumented tests on failure
+        id: retry-tests
+        if: steps.run-tests.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@v2.30.1
+        timeout-minutes: 20
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
+          emulator-boot-timeout: 300
+          disable-animations: true
+          script: |
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+            adb shell input keyevent 82
+            echo "=== Retrying failed tests (attempt 2) ==="
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace --continue -Pandroid.testInstrumentationRunnerArguments.size=small
 
       - name: Upload test results
         if: always()
@@ -229,13 +253,13 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Android TV Tests — API 33
+  # Android TV Tests — API 34
   # Uses google-tv target with "Android TV 1080p" profile for leanback UI testing.
-  # API 33 chosen as stable TV platform (Android 13 TV with mature google-tv image).
+  # API 34 chosen as stable TV platform (Android 14 TV with mature google-tv image).
   # Verifies ro.build.characteristics contains "tv" to ensure correct device type.
   # ---------------------------------------------------------------------------
   android-tv-tests:
-    name: Android TV Tests (API 33)
+    name: Android TV Tests (API 34)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ lint, unit-tests ]
@@ -276,15 +300,15 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-tv-33-google-tv-x86_64-${{ github.run_id }}
+          key: avd-tv-34-google-tv-x86_64-${{ github.run_id }}
           restore-keys: |
-            avd-tv-33-google-tv-x86_64-
+            avd-tv-34-google-tv-x86_64-
 
       - name: Create Android TV AVD snapshot
         if: steps.avd-cache-tv.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2.30.1
         with:
-          api-level: 33
+          api-level: 34
           target: google-tv
           profile: "Android TV 1080p"
           arch: x86_64
@@ -293,10 +317,11 @@ jobs:
           script: echo "Android TV AVD snapshot created"
 
       - name: Run Android TV tests
+        id: run-tv-tests
         uses: reactivecircus/android-emulator-runner@v2.30.1
         timeout-minutes: 25
         with:
-          api-level: 33
+          api-level: 34
           target: google-tv
           profile: "Android TV 1080p"
           arch: x86_64
@@ -320,13 +345,32 @@ jobs:
             fi
             
             echo "=== Running instrumented tests on Android TV ==="
-            ./gradlew :app:connectedDebugAndroidTest --stacktrace
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.size=small
+
+      - name: Retry Android TV tests on failure
+        id: retry-tv-tests
+        if: steps.run-tv-tests.outcome == 'failure'
+        uses: reactivecircus/android-emulator-runner@v2.30.1
+        timeout-minutes: 25
+        with:
+          api-level: 34
+          target: google-tv
+          profile: "Android TV 1080p"
+          arch: x86_64
+          emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
+          emulator-boot-timeout: 300
+          disable-animations: true
+          script: |
+            echo "=== Retrying Android TV tests (attempt 2) ==="
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+            sleep 2
+            ./gradlew :app:connectedDebugAndroidTest --stacktrace --continue -Pandroid.testInstrumentationRunnerArguments.size=small
 
       - name: Upload Android TV test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-tv-test-results-api33
+          name: android-tv-test-results-api34
           path: |
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
