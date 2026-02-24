@@ -124,12 +124,11 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Instrumented Tests — Mobile Device Matrix
-  # Testing on stable API levels:
-  # - API 29: Android 10 (minimum baseline, stable emulator)
+  # Testing on stable API levels with google_apis target (required for x86_64):
   # - API 30: Android 11 (baseline, widely adopted)
-  # - API 31: Android 12 (stable, modern features)
+  # - API 31: Android 12 (stable, modern features)  
   # - API 33: Android 13 (recent, stable emulator images)
-  # Note: API 34+ often have emulator stability issues on GitHub-hosted runners
+  # Note: Using google_apis target as default doesn't provide x86_64 images on Linux
   # ---------------------------------------------------------------------------
   instrumented-tests:
     name: Instrumented Tests (API ${{ matrix.api-level }})
@@ -140,16 +139,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - api-level: 29
-            target: default
-            arch: x86_64
-            name: "Android 10"
           - api-level: 30
-            target: default
+            target: google_apis
             arch: x86_64
             name: "Android 11"
           - api-level: 31
-            target: default
+            target: google_apis
             arch: x86_64
             name: "Android 12"
           - api-level: 33
@@ -269,14 +264,13 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Android TV Tests — API 30
-  # Uses android-tv target with stable API 30 (Android 11 TV).
-  # API 34 has emulator stability issues on GitHub-hosted runners.
-  # API 30 provides stable google-tv image with leanback UI support.
+  # Android TV Tests — API 30 (Android 11 TV)
+  # Uses android-tv target with stable API 30.
+  # API 30 provides stable android-tv image with leanback UI support.
   # Note: Using "tv_1080p" profile for consistent TV device testing.
   # ---------------------------------------------------------------------------
   android-tv-tests:
-    name: Android TV Tests (API 30)
+    name: Android TV Tests (API 30 - Android 11)
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs: [ lint, unit-tests ]
