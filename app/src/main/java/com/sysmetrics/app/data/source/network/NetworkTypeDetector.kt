@@ -62,8 +62,8 @@ class NetworkTypeDetector(private val context: Context) {
      *
      * @return [NetworkTypeInfo] with connection details
      */
+    @SuppressLint("NewApi")
     fun getCurrentNetworkType(): NetworkTypeInfo {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return NetworkTypeInfo.DISCONNECTED
         return try {
             val network = connectivityManager.activeNetwork
             val capabilities = connectivityManager.getNetworkCapabilities(network)
@@ -74,7 +74,7 @@ class NetworkTypeDetector(private val context: Context) {
             }
 
             detectNetworkType(capabilities)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Timber.tag(TAG).e(e, "Error detecting network type")
             NetworkTypeInfo.DISCONNECTED
         }
@@ -157,9 +157,8 @@ class NetworkTypeDetector(private val context: Context) {
     /**
      * Detects cellular network generation (2G/3G/4G/5G).
      */
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission", "NewApi")
     private fun detectCellularGeneration(): NetworkTypeEnum {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return NetworkTypeEnum.UNKNOWN
         return try {
             val networkType = telephonyManager?.dataNetworkType ?: return NetworkTypeEnum.UNKNOWN
 
@@ -390,31 +389,39 @@ class NetworkTypeDetector(private val context: Context) {
     /**
      * Checks if device is connected to internet.
      */
+    @SuppressLint("NewApi")
     fun isConnected(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return try {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (e: Throwable) { false }
     }
 
+    @SuppressLint("NewApi")
     fun isMetered(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        return try {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        } catch (e: Throwable) { false }
     }
 
+    @SuppressLint("NewApi")
     fun getDownstreamBandwidthKbps(): Int {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0
-        val network = connectivityManager.activeNetwork ?: return 0
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
-        return capabilities.linkDownstreamBandwidthKbps
+        return try {
+            val network = connectivityManager.activeNetwork ?: return 0
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
+            capabilities.linkDownstreamBandwidthKbps
+        } catch (e: Throwable) { 0 }
     }
 
+    @SuppressLint("NewApi")
     fun getUpstreamBandwidthKbps(): Int {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0
-        val network = connectivityManager.activeNetwork ?: return 0
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
-        return capabilities.linkUpstreamBandwidthKbps
+        return try {
+            val network = connectivityManager.activeNetwork ?: return 0
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
+            capabilities.linkUpstreamBandwidthKbps
+        } catch (e: Throwable) { 0 }
     }
 }
