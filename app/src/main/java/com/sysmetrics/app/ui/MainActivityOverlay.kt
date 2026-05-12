@@ -191,7 +191,7 @@ class MainActivityOverlay : AppCompatActivity() {
                     strokeColor = ContextCompat.getColorStateList(context, R.color.metric_success)
                 }
                 tvStatus.text = getString(R.string.overlay_status_on)
-                tvStatus.setTextColor(getColor(R.color.metric_success))
+                tvStatus.setTextColor(ContextCompat.getColor(this@MainActivityOverlay, R.color.metric_success))
                 layoutMetricsPreview.visibility = View.VISIBLE
             } else {
                 // Inactive state - Red
@@ -202,7 +202,7 @@ class MainActivityOverlay : AppCompatActivity() {
                     strokeColor = ContextCompat.getColorStateList(context, R.color.metric_error)
                 }
                 tvStatus.text = getString(R.string.overlay_status_off)
-                tvStatus.setTextColor(getColor(R.color.text_secondary))
+                tvStatus.setTextColor(ContextCompat.getColor(this@MainActivityOverlay, R.color.text_secondary))
                 layoutMetricsPreview.visibility = View.GONE
             }
             
@@ -245,14 +245,14 @@ class MainActivityOverlay : AppCompatActivity() {
                     tvTempPreview.setTextColor(getColorForTemperature(tempInfo.cpuTempCelsius))
                 } else {
                     tvTempPreview.text = "N/A"
-                    tvTempPreview.setTextColor(getColor(R.color.text_tertiary))
+                    tvTempPreview.setTextColor(ContextCompat.getColor(this@MainActivityOverlay, R.color.text_tertiary))
                 }
                 
                 // Network
                 val networkStats = networkStatsDataSource.readNetworkStats()
                 val networkDisplay = formatNetworkSpeed(networkStats.ingressBytesPerSec, networkStats.egressBytesPerSec)
                 tvNetworkPreview.text = networkDisplay
-                tvNetworkPreview.setTextColor(getColor(R.color.metric_success))
+                tvNetworkPreview.setTextColor(ContextCompat.getColor(this@MainActivityOverlay, R.color.metric_success))
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to update metrics preview")
@@ -281,20 +281,17 @@ class MainActivityOverlay : AppCompatActivity() {
      */
     private fun getColorForTemperature(tempCelsius: Float): Int {
         return when {
-            tempCelsius < 45 -> getColor(R.color.metric_success)   // Green - cool
-            tempCelsius < 60 -> getColor(R.color.metric_warning)   // Yellow - warm
-            else -> getColor(R.color.metric_error)                  // Red - hot
+            tempCelsius < 45 -> ContextCompat.getColor(this, R.color.metric_success)
+            tempCelsius < 60 -> ContextCompat.getColor(this, R.color.metric_warning)
+            else -> ContextCompat.getColor(this, R.color.metric_error)
         }
     }
 
-    /**
-     * Get color based on percentage value (0-100)
-     */
     private fun getColorForValue(percent: Float): Int {
         return when {
-            percent < 50 -> getColor(R.color.metric_success)   // Green
-            percent < 80 -> getColor(R.color.metric_warning)   // Yellow
-            else -> getColor(R.color.metric_error)             // Red
+            percent < 50 -> ContextCompat.getColor(this, R.color.metric_success)
+            percent < 80 -> ContextCompat.getColor(this, R.color.metric_warning)
+            else -> ContextCompat.getColor(this, R.color.metric_error)
         }
     }
 

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import com.sysmetrics.app.R
 import com.sysmetrics.app.ui.MainActivityOverlay
 import timber.log.Timber
@@ -166,9 +167,9 @@ class MetricsWidgetProvider : AppWidgetProvider() {
 
     private fun getColorForValue(context: Context, percent: Float): Int {
         return when {
-            percent < 50 -> context.getColor(R.color.metric_success)
-            percent < 80 -> context.getColor(R.color.metric_warning)
-            else -> context.getColor(R.color.metric_error)
+            percent < 50 -> ContextCompat.getColor(context, R.color.metric_success)
+            percent < 80 -> ContextCompat.getColor(context, R.color.metric_warning)
+            else -> ContextCompat.getColor(context, R.color.metric_error)
         }
     }
 }

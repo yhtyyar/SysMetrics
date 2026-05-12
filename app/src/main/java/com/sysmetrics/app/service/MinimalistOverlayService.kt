@@ -18,6 +18,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import com.sysmetrics.app.R
 import androidx.lifecycle.LifecycleService
@@ -559,9 +560,9 @@ class MinimalistOverlayService : LifecycleService() {
      */
     private fun getColorForValue(percent: Float): Int {
         return when {
-            percent < Constants.PerformanceThresholds.CPU_NORMAL_MAX -> getColor(R.color.metric_normal)  // Green
-            percent < Constants.PerformanceThresholds.CPU_WARNING_MAX -> getColor(R.color.metric_warning)  // Yellow/Orange
-            else -> getColor(R.color.metric_error)  // Red
+            percent < Constants.PerformanceThresholds.CPU_NORMAL_MAX -> ContextCompat.getColor(this, R.color.metric_normal)
+            percent < Constants.PerformanceThresholds.CPU_WARNING_MAX -> ContextCompat.getColor(this, R.color.metric_warning)
+            else -> ContextCompat.getColor(this, R.color.metric_error)
         }
     }
     

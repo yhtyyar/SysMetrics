@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
+import android.annotation.SuppressLint
 import android.os.Build
 import android.telephony.PhoneStateListener
 import android.telephony.SignalStrength
@@ -62,6 +63,7 @@ class NetworkTypeDetector(private val context: Context) {
      * @return [NetworkTypeInfo] with connection details
      */
     fun getCurrentNetworkType(): NetworkTypeInfo {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return NetworkTypeInfo.DISCONNECTED
         return try {
             val network = connectivityManager.activeNetwork
             val capabilities = connectivityManager.getNetworkCapabilities(network)
@@ -155,7 +157,9 @@ class NetworkTypeDetector(private val context: Context) {
     /**
      * Detects cellular network generation (2G/3G/4G/5G).
      */
+    @SuppressLint("MissingPermission")
     private fun detectCellularGeneration(): NetworkTypeEnum {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return NetworkTypeEnum.UNKNOWN
         return try {
             val networkType = telephonyManager?.dataNetworkType ?: return NetworkTypeEnum.UNKNOWN
 
@@ -387,33 +391,28 @@ class NetworkTypeDetector(private val context: Context) {
      * Checks if device is connected to internet.
      */
     fun isConnected(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-    /**
-     * Checks if current connection is metered.
-     */
     fun isMetered(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
     }
 
-    /**
-     * Gets estimated downstream bandwidth in Kbps.
-     */
     fun getDownstreamBandwidthKbps(): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0
         val network = connectivityManager.activeNetwork ?: return 0
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
         return capabilities.linkDownstreamBandwidthKbps
     }
 
-    /**
-     * Gets estimated upstream bandwidth in Kbps.
-     */
     fun getUpstreamBandwidthKbps(): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0
         val network = connectivityManager.activeNetwork ?: return 0
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return 0
         return capabilities.linkUpstreamBandwidthKbps
