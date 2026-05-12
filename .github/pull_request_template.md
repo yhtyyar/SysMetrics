@@ -1,28 +1,63 @@
-## Description
+# Pull Request
 
-Brief description of the changes in this PR.
+## Что изменено
 
-## Related Issue
+<!-- 1–3 bullet points: кратко суть изменений -->
 
-Fixes #(issue number)
+-
 
-## Type of Change
+## Тип изменения
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Refactor (non-breaking change that improves code quality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] Documentation update
+- [ ] `fix` — исправление бага
+- [ ] `feat` — новая функциональность
+- [ ] `refactor` — без изменения поведения
+- [ ] `perf` — оптимизация производительности
+- [ ] `test` — добавление/правка тестов
+- [ ] `ci` — изменения pipeline
+- [ ] `docs` — документация
 
-## Checklist
+## Связанные issues
 
-- [ ] Code follows the project's [code standards](DEVELOPMENT.md)
-- [ ] Commit messages follow [Conventional Commits](CONTRIBUTING.md#commit-style)
-- [ ] Tests added or updated for the changes
-- [ ] `./gradlew :app:testDebugUnitTest` passes locally
-- [ ] `./gradlew :app:lintDebug` passes locally
-- [ ] Documentation updated if needed
+Closes #
 
-## Testing
+## Чеклист
 
-Describe how this was tested (unit tests, manual testing, emulator, physical device).
+### Обязательно
+
+- [ ] Unit-тесты проходят: `./gradlew :app:testDebugUnitTest`
+- [ ] Lint проходит: `./gradlew :app:lintDebug`
+- [ ] Сборка успешна: `./gradlew :app:assembleDebug`
+- [ ] Commit messages в формате [Conventional Commits](../docs/contributing/CONTRIBUTING.md)
+
+### Для изменений native C++
+
+- [ ] Проверен fallback-путь (Kotlin-реализация работает без `.so`)
+- [ ] Нет утечек памяти (буферы освобождены, `fclose` вызван)
+- [ ] Нет глобального мутабельного состояния без mutex
+
+### Для изменений overlay/service
+
+- [ ] Протестировано на мобильном устройстве (drag работает)
+- [ ] Протестировано на Android TV (hover events не крашат)
+- [ ] Нет двойных Flow-коллекторов (каждый source собирается один раз)
+
+### Для изменений CI/CD
+
+- [ ] Проверены secrets/env vars — ничего приватного в логах
+- [ ] Таймауты выставлены разумно
+
+## Скриншоты / видео (для UI-изменений)
+
+<!-- Приложите скриншот или запись если затронут UI -->
+
+## Как тестировать
+
+<!-- Шаги для ревьюера: как воспроизвести и проверить изменение -->
+
+1.
+2.
+3.
+
+## Производительность (если применимо)
+
+<!-- Если изменение влияет на CPU/RAM/battery — укажите измеренные данные до и после -->

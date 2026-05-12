@@ -28,11 +28,11 @@ import timber.log.Timber
  */
 class SettingsFragment : Fragment() {
     
-    private val viewModel: SettingsViewModel by viewModels {
+    private val viewModel: MonitoringSettingsViewModel by viewModels {
         val app = requireActivity().application as SysMetricsApplication
         val prefsDataSource = AdvancedPreferencesDataSource(requireContext())
         val repository = SettingsRepository(prefsDataSource)
-        SettingsViewModel.Factory(repository)
+        MonitoringSettingsViewModel.Factory(repository)
     }
     
     // UI Elements

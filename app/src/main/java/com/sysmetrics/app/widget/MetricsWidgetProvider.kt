@@ -21,10 +21,10 @@ class MetricsWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val TAG = "MetricsWidget"
         const val ACTION_REFRESH = "com.sysmetrics.app.widget.ACTION_REFRESH"
-        
-        // Cache for CPU delta calculation
-        private var lastCpuTotal = 0L
-        private var lastCpuIdle = 0L
+
+        // CPU delta cache — @Volatile + synchronized writes to prevent race on concurrent widget updates
+        @Volatile private var lastCpuTotal = 0L
+        @Volatile private var lastCpuIdle = 0L
         
         /**
          * Update all widgets.
@@ -131,17 +131,18 @@ class MetricsWidgetProvider : AppWidgetProvider() {
             val currentIdle = idle + iowait
             val currentTotal = user + nice + system + idle + iowait + irq + softirq
             
-            // Calculate delta from last reading
-            val deltaTotal = currentTotal - lastCpuTotal
-            val deltaIdle = currentIdle - lastCpuIdle
-            
-            // Update cache
-            lastCpuTotal = currentTotal
-            lastCpuIdle = currentIdle
-            
-            // First reading - return 0
+            // Atomically read prev, update cache, compute delta
+            val (deltaTotal, deltaIdle) = synchronized(MetricsWidgetProvider) {
+                val dt = currentTotal - lastCpuTotal
+                val di = currentIdle - lastCpuIdle
+                lastCpuTotal = currentTotal
+                lastCpuIdle = currentIdle
+                Pair(dt, di)
+            }
+
+            // First reading — return 0
             if (deltaTotal == 0L) return 0f
-            
+
             val cpuUsage = ((deltaTotal - deltaIdle).toFloat() / deltaTotal) * 100f
             cpuUsage.coerceIn(0f, 100f)
         } catch (e: Exception) {

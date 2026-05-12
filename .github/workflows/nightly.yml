@@ -1,15 +1,13 @@
 # =============================================================================
 # SysMetrics Pro — Nightly Pipeline
 # =============================================================================
-# Triggers: cron schedule (03:00 UTC daily), manual dispatch
+# Triggers: manual dispatch only (previously ran daily via cron)
 # Jobs: full test suite, performance benchmarks, dependency updates check
 # =============================================================================
 
 name: Nightly
 
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:

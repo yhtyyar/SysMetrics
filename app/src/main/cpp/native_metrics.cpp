@@ -3,15 +3,17 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <pthread.h>
 #include "native_metrics.h"
 
 #define LOG_TAG "SysMetricsNative"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// Static storage for previous CPU stats
+// Static storage for previous CPU stats — guarded by mutex for thread safety
 static CpuStats prev_stats = {0};
 static bool has_prev_stats = false;
+static pthread_mutex_t cpu_stats_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Reads CPU statistics from /proc/stat.
@@ -246,6 +248,7 @@ extern "C" {
 /**
  * Get current CPU usage percentage.
  * Automatically manages previous stats for delta calculation.
+ * Thread-safe: protected by cpu_stats_mutex.
  */
 JNIEXPORT jfloat JNICALL
 Java_com_sysmetrics_app_native_1bridge_NativeMetrics_getCpuUsage(JNIEnv* env, jobject thiz) {
@@ -257,13 +260,13 @@ Java_com_sysmetrics_app_native_1bridge_NativeMetrics_getCpuUsage(JNIEnv* env, jo
 
     float usage = 0.0f;
 
+    pthread_mutex_lock(&cpu_stats_mutex);
     if (has_prev_stats) {
         usage = calculate_cpu_usage(&prev_stats, &curr_stats);
     }
-
-    // Store current as previous for next call
     memcpy(&prev_stats, &curr_stats, sizeof(CpuStats));
     has_prev_stats = true;
+    pthread_mutex_unlock(&cpu_stats_mutex);
 
     return usage;
 }
@@ -271,11 +274,14 @@ Java_com_sysmetrics_app_native_1bridge_NativeMetrics_getCpuUsage(JNIEnv* env, jo
 /**
  * Reset CPU stats baseline.
  * Call this when starting a new monitoring session.
+ * Thread-safe: protected by cpu_stats_mutex.
  */
 JNIEXPORT void JNICALL
 Java_com_sysmetrics_app_native_1bridge_NativeMetrics_resetCpuBaseline(JNIEnv* env, jobject thiz) {
+    pthread_mutex_lock(&cpu_stats_mutex);
     has_prev_stats = false;
     memset(&prev_stats, 0, sizeof(CpuStats));
+    pthread_mutex_unlock(&cpu_stats_mutex);
     LOGI("CPU baseline reset");
 }
 

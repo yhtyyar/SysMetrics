@@ -90,19 +90,21 @@ int native_read_proc_net_dev(InterfaceStatsNative* stats, int max_count) {
     int64_t timestamp = get_timestamp_ms();
     int count = 0;
     int line_num = 0;
-    
-    char* line = strtok(buffer, "\n");
+
+    // Use strtok_r (reentrant) instead of strtok for thread safety
+    char* saveptr = NULL;
+    char* line = strtok_r(buffer, "\n", &saveptr);
     while (line && count < max_count) {
         line_num++;
-        
+
         // Skip first two header lines
         if (line_num > 2) {
             if (parse_interface_line(line, &stats[count], timestamp) == 0) {
                 count++;
             }
         }
-        
-        line = strtok(NULL, "\n");
+
+        line = strtok_r(NULL, "\n", &saveptr);
     }
     
     return count;

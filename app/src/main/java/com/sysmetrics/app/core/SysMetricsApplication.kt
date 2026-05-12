@@ -3,6 +3,7 @@ package com.sysmetrics.app.core
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.sysmetrics.app.BuildConfig
 import com.sysmetrics.app.core.di.AppContainer
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
@@ -26,8 +27,8 @@ class SysMetricsApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize Timber for logging
-        if (timber.log.Timber.treeCount == 0) {
+        // Initialize Timber for logging (debug builds only — never log metrics to logcat in production)
+        if (BuildConfig.DEBUG && timber.log.Timber.treeCount == 0) {
             Timber.plant(Timber.DebugTree())
         }
         

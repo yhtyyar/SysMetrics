@@ -32,7 +32,7 @@ import com.sysmetrics.app.domain.collector.IProcessStatsCollector
 import com.sysmetrics.app.domain.formatter.IStringFormatter
 import com.sysmetrics.app.utils.AdaptivePerformanceMonitor
 import com.sysmetrics.app.utils.DeviceUtils
-import com.sysmetrics.app.utils.DraggableOverlayTouchListener
+import com.sysmetrics.app.ui.overlay.DraggableOverlayTouchListener
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
@@ -266,20 +266,6 @@ class MinimalistOverlayService : LifecycleService() {
     }
     
     /**
-     * Load config and apply visibility settings
-     */
-    private fun loadConfigAndApplySettings() {
-        lifecycleScope.launch {
-            preferencesDataSource.overlayConfig.collect { config ->
-                currentConfig = config
-                if (::timeText.isInitialized) {
-                    timeText.visibility = if (config.showTime) android.view.View.VISIBLE else android.view.View.GONE
-                }
-            }
-        }
-    }
-
-    /**
      * Create notification channel for foreground service
      */
     private fun createNotificationChannel() {
@@ -332,9 +318,6 @@ class MinimalistOverlayService : LifecycleService() {
             Timber.tag(TAG_SERVICE).d("📋 View references: CPU=%b, RAM=%b, Net=%b, Self=%b, Time=%b",
                 ::cpuText.isInitialized, ::ramText.isInitialized, ::networkText.isInitialized,
                 ::selfStatsText.isInitialized, ::timeText.isInitialized)
-            
-            // Load config and apply visibility
-            loadConfigAndApplySettings()
 
             // Create window params
             val params = createLayoutParams()

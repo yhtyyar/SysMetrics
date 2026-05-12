@@ -87,12 +87,12 @@ android {
     }
 
     lint {
-        abortOnError = false
+        abortOnError = true
         checkReleaseBuilds = true
         ignoreWarnings = false
         warningsAsErrors = false
-        
-        // Disable specific checks for TV app
+
+        // TV-specific: icon density folders not required for leanback launcher
         disable += listOf(
             "IconMissingDensityFolder",
             "IconDensities",
