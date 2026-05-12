@@ -11,12 +11,27 @@ import com.sysmetrics.app.data.source.GpuDataSource
 import com.sysmetrics.app.data.source.NetworkDataSource
 import com.sysmetrics.app.data.source.PreferencesDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
+import com.sysmetrics.app.data.source.network.NetworkStatsDataSource
+import com.sysmetrics.app.domain.collector.ICpuMetricsCollector
+import com.sysmetrics.app.domain.collector.IMetricsCollector
+import com.sysmetrics.app.domain.collector.IProcessStatsCollector
+import com.sysmetrics.app.domain.formatter.IStringFormatter
 import com.sysmetrics.app.domain.repository.IMetricsHistoryRepository
 import com.sysmetrics.app.domain.repository.IPreferencesRepository
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import com.sysmetrics.app.domain.usecase.ExportMetricsUseCase
 import com.sysmetrics.app.domain.usecase.GetSystemMetricsUseCase
 import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
+import com.sysmetrics.app.native_bridge.FallbackCpuMetricsCollector
+import com.sysmetrics.app.native_bridge.FallbackStringFormatter
+import com.sysmetrics.app.native_bridge.MetricsCollectorFactory
+import com.sysmetrics.app.native_bridge.NativeCpuMetricsCollector
+import com.sysmetrics.app.native_bridge.NativeStringFormatter
+import com.sysmetrics.app.utils.AdaptivePerformanceMonitor
+import com.sysmetrics.app.utils.BatteryAwareMonitor
+import com.sysmetrics.app.utils.DeviceUtils
+import com.sysmetrics.app.utils.MetricsCollector
+import com.sysmetrics.app.utils.ProcessStatsCollector
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -132,4 +147,70 @@ object AppModule {
         @ApplicationContext context: Context,
         historyRepository: IMetricsHistoryRepository
     ): ExportMetricsUseCase = ExportMetricsUseCase(context, historyRepository)
+
+    // ============== Native Bridge ==============
+
+    @Provides @Singleton
+    fun provideNativeCpuMetricsCollector(): NativeCpuMetricsCollector = NativeCpuMetricsCollector()
+
+    @Provides @Singleton
+    fun provideFallbackCpuMetricsCollector(): FallbackCpuMetricsCollector = FallbackCpuMetricsCollector()
+
+    @Provides @Singleton
+    fun provideNativeStringFormatter(): NativeStringFormatter = NativeStringFormatter()
+
+    @Provides @Singleton
+    fun provideFallbackStringFormatter(): FallbackStringFormatter = FallbackStringFormatter()
+
+    @Provides @Singleton
+    fun provideMetricsCollectorFactory(
+        native: NativeCpuMetricsCollector,
+        fallback: FallbackCpuMetricsCollector,
+        nativeFormatter: NativeStringFormatter,
+        fallbackFormatter: FallbackStringFormatter
+    ): MetricsCollectorFactory = MetricsCollectorFactory(native, fallback, nativeFormatter, fallbackFormatter)
+
+    @Provides @Singleton
+    fun provideICpuMetricsCollector(
+        factory: MetricsCollectorFactory
+    ): ICpuMetricsCollector = factory.createCpuCollector()
+
+    @Provides @Singleton
+    fun provideIStringFormatter(
+        factory: MetricsCollectorFactory
+    ): IStringFormatter = factory.createStringFormatter()
+
+    // ============== Utils ==============
+
+    @Provides @Singleton
+    fun provideDeviceUtils(
+        @ApplicationContext context: Context
+    ): DeviceUtils = DeviceUtils(context)
+
+    @Provides @Singleton
+    fun provideIMetricsCollector(
+        @ApplicationContext context: Context,
+        systemDataSource: SystemDataSource,
+        dispatcherProvider: DispatcherProvider
+    ): IMetricsCollector = MetricsCollector(context, systemDataSource, dispatcherProvider)
+
+    @Provides @Singleton
+    fun provideIProcessStatsCollector(
+        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider,
+        cpuMetricsCollector: ICpuMetricsCollector
+    ): IProcessStatsCollector = ProcessStatsCollector(context, dispatcherProvider, cpuMetricsCollector)
+
+    @Provides @Singleton
+    fun provideAdaptivePerformanceMonitor(): AdaptivePerformanceMonitor = AdaptivePerformanceMonitor()
+
+    @Provides @Singleton
+    fun provideBatteryAwareMonitor(
+        @ApplicationContext context: Context
+    ): BatteryAwareMonitor = BatteryAwareMonitor(context)
+
+    @Provides @Singleton
+    fun provideNetworkStatsDataSource(
+        dispatcherProvider: DispatcherProvider
+    ): NetworkStatsDataSource = NetworkStatsDataSource(dispatcherProvider)
 }

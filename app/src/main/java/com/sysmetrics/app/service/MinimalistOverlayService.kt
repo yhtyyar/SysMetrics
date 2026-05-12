@@ -22,22 +22,23 @@ import androidx.preference.PreferenceManager
 import com.sysmetrics.app.R
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.core.common.Constants
 import com.sysmetrics.app.data.source.PreferencesDataSource
-import com.sysmetrics.app.data.source.SystemDataSource
 import com.sysmetrics.app.data.source.network.NetworkStatsDataSource
 import com.sysmetrics.app.domain.collector.IMetricsCollector
 import com.sysmetrics.app.domain.collector.IProcessStatsCollector
 import com.sysmetrics.app.domain.formatter.IStringFormatter
 import com.sysmetrics.app.utils.AdaptivePerformanceMonitor
+import com.sysmetrics.app.utils.BatteryAwareMonitor
 import com.sysmetrics.app.utils.DeviceUtils
 import com.sysmetrics.app.ui.overlay.DraggableOverlayTouchListener
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 /**
  * Optimized overlay service - Production ready
@@ -56,9 +57,9 @@ import java.util.Locale
  * - Uses coroutines for async operations
  * - Better separation of concerns
  */
-// @AndroidEntryPoint
+@AndroidEntryPoint
 class MinimalistOverlayService : LifecycleService() {
-    
+
     companion object {
         // Logging tags for easy filtering
         private const val TAG_SERVICE = "OVERLAY_SERVICE"
@@ -67,14 +68,13 @@ class MinimalistOverlayService : LifecycleService() {
         private const val TAG_SETTINGS = "OVERLAY_SETTINGS"
     }
 
-    private lateinit var systemDataSource: SystemDataSource
-    private lateinit var deviceUtils: DeviceUtils
-    private lateinit var metricsCollector: IMetricsCollector
-    private lateinit var processStatsCollector: IProcessStatsCollector
-    private lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
-    private lateinit var batteryAwareMonitor: com.sysmetrics.app.utils.BatteryAwareMonitor
-    private lateinit var preferencesDataSource: PreferencesDataSource
-    private lateinit var stringFormatter: IStringFormatter
+    @Inject lateinit var deviceUtils: DeviceUtils
+    @Inject lateinit var metricsCollector: IMetricsCollector
+    @Inject lateinit var processStatsCollector: IProcessStatsCollector
+    @Inject lateinit var adaptiveMonitor: AdaptivePerformanceMonitor
+    @Inject lateinit var batteryAwareMonitor: BatteryAwareMonitor
+    @Inject lateinit var preferencesDataSource: PreferencesDataSource
+    @Inject lateinit var stringFormatter: IStringFormatter
 
     private lateinit var windowManager: WindowManager
     private lateinit var overlayView: LinearLayout
@@ -106,8 +106,7 @@ class MinimalistOverlayService : LifecycleService() {
     private lateinit var selfStatsText: TextView
     private lateinit var timeText: TextView
     
-    // Network data source
-    private lateinit var networkStatsDataSource: NetworkStatsDataSource
+    @Inject lateinit var networkStatsDataSource: NetworkStatsDataSource
 
     private var currentConfig: com.sysmetrics.app.data.model.OverlayConfig = com.sysmetrics.app.data.model.OverlayConfig.DEFAULT
     private var isBaselineInitialized = false
@@ -119,25 +118,11 @@ class MinimalistOverlayService : LifecycleService() {
         super.onCreate()
         Timber.tag(TAG_SERVICE).i("✅ MinimalistOverlayService created")
         
-        // Initialize dependencies from AppContainer
-        val appContainer = (application as SysMetricsApplication).appContainer
-        deviceUtils = appContainer.deviceUtils
-        metricsCollector = appContainer.metricsCollector
-        processStatsCollector = appContainer.processStatsCollector
-        adaptiveMonitor = appContainer.adaptivePerformanceMonitor
-        stringFormatter = appContainer.stringFormatter
-        
-        // Create data sources directly (they are private in AppContainer)
-        systemDataSource = SystemDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
-        preferencesDataSource = PreferencesDataSource(this)
-        batteryAwareMonitor = com.sysmetrics.app.utils.BatteryAwareMonitor(this)
-        networkStatsDataSource = NetworkStatsDataSource(com.sysmetrics.app.core.di.DefaultDispatcherProvider())
-        
         // Setup exception handler for TV-specific crashes
         setupExceptionHandler()
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        Timber.tag(TAG_SERVICE).d("📦 Dependencies initialized from AppContainer")
+        Timber.tag(TAG_SERVICE).d("📦 Dependencies injected via Hilt")
         
         // Log device capabilities
         deviceUtils.logDeviceCapabilities()

@@ -2,7 +2,7 @@
 # SysMetrics Pro — Release Pipeline
 # =============================================================================
 # Triggers: tags matching v*.*.*
-# Jobs: version validation, signed release APK, AAB, GitHub Release
+# Jobs: Validate → Tests → Build → Publish → Cleanup
 # =============================================================================
 
 name: Release
@@ -11,6 +11,11 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+# Only one release at a time; never cancel a release in flight
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -193,21 +198,21 @@ jobs:
         with:
           name: release-apk
           path: app/build/outputs/SysMetrics-v*.apk
-          retention-days: 90
+          retention-days: 1
 
       - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
           name: release-aab
           path: app/build/outputs/SysMetrics-v*.aab
-          retention-days: 90
+          retention-days: 1
 
       - name: Upload ProGuard mapping
         uses: actions/upload-artifact@v4
         with:
           name: proguard-mapping
           path: app/build/outputs/mapping/release/mapping.txt
-          retention-days: 180
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Create GitHub Release
@@ -282,3 +287,88 @@ jobs:
             artifacts/mapping.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # Cleanup — always runs at the end, removes old release runs & artifacts
+  # Note: files attached to GitHub Releases are permanent; only intermediate
+  # pipeline artifacts (APK/AAB/mapping between jobs) are removed here.
+  # ---------------------------------------------------------------------------
+  cleanup:
+    name: Cleanup Old Release Runs & Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ validate, test, build-release, publish ]
+    if: always()
+    permissions:
+      actions: write
+
+    steps:
+      - name: Delete old release workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+        run: |
+          echo "=== Deleting old release runs ==="
+          DELETED=0
+          PAGE=1
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/workflows/release.yml/runs?per_page=100&page=$PAGE&status=completed")
+
+            RUN_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.workflow_runs[] | select(.id | tostring != $current) | .id')
+
+            [ -z "$RUN_IDS" ] && break
+
+            for RUN_ID in $RUN_IDS; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID")
+              [ "$STATUS" = "204" ] && { echo "  ✓ Deleted run $RUN_ID"; DELETED=$((DELETED+1)); }
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+          echo "=== Deleted $DELETED old release run(s) ==="
+
+      - name: Delete old artifacts from previous release runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+        run: |
+          echo "=== Deleting artifacts from previous release runs ==="
+          DELETED=0
+          PAGE=1
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/artifacts?per_page=100&page=$PAGE")
+
+            ART_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.artifacts[] | select(.workflow_run.id | tostring != $current) | .id')
+
+            [ -z "$ART_IDS" ] && break
+
+            for ART_ID in $ART_IDS; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$REPO/actions/artifacts/$ART_ID")
+              [ "$STATUS" = "204" ] && { echo "  ✓ Deleted artifact $ART_ID"; DELETED=$((DELETED+1)); }
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+          echo "=== Deleted $DELETED old artifact(s) ==="

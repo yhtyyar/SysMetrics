@@ -1,0 +1,142 @@
+# =============================================================================
+# SysMetrics Pro — One-Time History Cleanup
+# =============================================================================
+# Trigger: manual dispatch ONLY
+# Purpose: purge ALL completed workflow runs and ALL artifacts across ALL
+#          workflows in this repo. Run once to clean up accumulated history
+#          before the per-run cleanup jobs in each workflow take over.
+# =============================================================================
+
+name: Cleanup History (One-Time)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — list what would be deleted without actually deleting'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+concurrency:
+  group: cleanup-history
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+
+jobs:
+  purge-all:
+    name: Purge All Old Runs & Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Delete all completed workflow runs (except this one)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          echo "=== Purging all completed workflow runs (dry_run=$DRY_RUN) ==="
+          DELETED=0
+          SKIPPED=0
+          PAGE=1
+
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/runs?per_page=100&page=$PAGE&status=completed")
+
+            RUN_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.workflow_runs[] | select(.id | tostring != $current) | .id')
+
+            [ -z "$RUN_IDS" ] && break
+
+            for RUN_ID in $RUN_IDS; do
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "  [DRY RUN] Would delete run $RUN_ID"
+                SKIPPED=$((SKIPPED+1))
+              else
+                STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X DELETE \
+                  -H "Authorization: Bearer $GH_TOKEN" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID")
+                if [ "$STATUS" = "204" ]; then
+                  echo "  ✓ Deleted run $RUN_ID"
+                  DELETED=$((DELETED+1))
+                else
+                  echo "  ✗ Failed to delete run $RUN_ID (HTTP $STATUS)"
+                fi
+              fi
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "=== [DRY RUN] Would have deleted $SKIPPED run(s) ==="
+          else
+            echo "=== Deleted $DELETED completed run(s) ==="
+          fi
+
+      - name: Delete all pipeline artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          echo "=== Purging all pipeline artifacts (dry_run=$DRY_RUN) ==="
+          DELETED=0
+          SKIPPED=0
+          PAGE=1
+
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/artifacts?per_page=100&page=$PAGE")
+
+            ART_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.artifacts[] | select(.workflow_run.id | tostring != $current) | .id')
+
+            [ -z "$ART_IDS" ] && break
+
+            for ART_ID in $ART_IDS; do
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "  [DRY RUN] Would delete artifact $ART_ID"
+                SKIPPED=$((SKIPPED+1))
+              else
+                STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X DELETE \
+                  -H "Authorization: Bearer $GH_TOKEN" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ART_ID")
+                if [ "$STATUS" = "204" ]; then
+                  echo "  ✓ Deleted artifact $ART_ID"
+                  DELETED=$((DELETED+1))
+                else
+                  echo "  ✗ Failed to delete artifact $ART_ID (HTTP $STATUS)"
+                fi
+              fi
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "=== [DRY RUN] Would have deleted $SKIPPED artifact(s) ==="
+          else
+            echo "=== Deleted $DELETED artifact(s) ==="
+          fi

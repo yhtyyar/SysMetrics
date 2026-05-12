@@ -1,15 +1,16 @@
 # =============================================================================
 # SysMetrics Pro — Android CI/CD Pipeline
 # =============================================================================
-# Triggers: push/PR to main
-# Jobs: Lint, Unit Tests, Instrumented Tests (Mobile Matrix), Android TV Tests
+# Triggers: push/PR to main ONLY
+# Jobs: Lint → Unit Tests → Build → Cleanup
 #
-# Key Design Decisions:
-# - Matrix strategy for mobile devices (API 30, 33, 34) to ensure broad compatibility
-# - Dedicated Android TV job on API 34 with tv_1080p profile for leanback UI testing
-# - AVD caching to reduce emulator startup time (~2-3 min saved per run)
-# - Native C++ support via NDK (required for sysmetrics_native.so)
-# - API 28 excluded: known emulator termination hang on GitHub-hosted runners
+# Design decisions:
+# - Single API level (no matrix) to keep run time predictable
+# - concurrency: cancel-in-progress on same branch/PR
+# - retention-days: 1 for all intermediate artifacts (only current run matters)
+# - cleanup job: purges old runs & artifacts after every successful build
+# - Instrumented emulator jobs disabled: google_apis images crash on
+#   GitHub-hosted runners; re-enable when self-hosted runners are available
 # =============================================================================
 
 name: Android CI
@@ -20,15 +21,15 @@ on:
   pull_request:
     branches: [ main ]
 
+# Cancel any previous run on the same branch/PR to avoid wasting minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
-concurrency:
-  group: android-ci-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
-  # Gradle optimization flags to speed up builds
   GRADLE_OPTS: >-
     -Dorg.gradle.daemon=false
     -Dorg.gradle.parallel=true
@@ -40,7 +41,6 @@ env:
 jobs:
   # ---------------------------------------------------------------------------
   # Lint & Static Analysis
-  # Validates code quality before expensive emulator tests run
   # ---------------------------------------------------------------------------
   lint:
     name: Lint & Static Analysis
@@ -48,7 +48,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -60,10 +60,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK ${{ env.NDK_VERSION }}
+      - name: Install NDK
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle with caching
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -71,17 +71,16 @@ jobs:
       - name: Run Android Lint
         run: ./gradlew :app:lintDebug --stacktrace
 
-      - name: Upload Lint report
+      - name: Upload lint report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
-          retention-days: 14
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
   # Unit Tests
-  # Fast feedback loop - runs before emulator tests
   # ---------------------------------------------------------------------------
   unit-tests:
     name: Unit Tests
@@ -89,7 +88,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -101,10 +100,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK ${{ env.NDK_VERSION }}
+      - name: Install NDK
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle with caching
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -118,226 +117,11 @@ jobs:
         with:
           name: unit-test-results
           path: app/build/reports/tests/testDebugUnitTest/
-          retention-days: 14
+          retention-days: 1
 
   # ---------------------------------------------------------------------------
-  # Instrumented Tests — Mobile Device Matrix
-  # Testing on representative API levels:
-  # - API 30: Android 11 (stable baseline, widely adopted)
-  # - API 33: Android 13 (modern, permission changes)
-  # - API 34: Android 14 (latest stable release)
-  # ---------------------------------------------------------------------------
-  instrumented-tests:
-    name: Instrumented Tests (API ${{ matrix.api-level }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [ lint, unit-tests ]
-    if: false  # Disabled: google_apis emulator images crash on GitHub-hosted runners (exit code 2)
-    strategy:
-      fail-fast: false  # Run all matrix jobs even if one fails
-      matrix:
-        include:
-          - api-level: 30
-            target: google_apis
-            arch: x86_64
-            name: "Android 11"
-          - api-level: 33
-            target: google_apis
-            arch: x86_64
-            name: "Android 13"
-          - api-level: 34
-            target: google_apis
-            arch: x86_64
-            name: "Android 14"
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install NDK ${{ env.NDK_VERSION }}
-        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
-
-      - name: Setup Gradle with caching
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      # Enable KVM acceleration for x86_64 emulator (critical for performance)
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      # Cache AVD to speed up subsequent runs (saves ~2-3 minutes)
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
-          restore-keys: |
-            avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}-
-
-      # Create AVD snapshot on cache miss for faster future runs
-      - name: Create AVD snapshot
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2.30.1
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: echo "AVD snapshot created"
-
-      - name: Run instrumented tests (${{ matrix.name }})
-        uses: reactivecircus/android-emulator-runner@v2.30.1
-        timeout-minutes: 20
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          # -no-snapshot-save: prevents hang on emulator termination
-          emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
-          emulator-boot-timeout: 300
-          disable-animations: true
-          script: |
-            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-            adb shell input keyevent 82  # Dismiss any keyguard
-            ./gradlew :app:connectedDebugAndroidTest --stacktrace
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-test-results-api${{ matrix.api-level }}
-          path: |
-            app/build/reports/androidTests/connected/
-            app/build/outputs/androidTest-results/connected/
-          retention-days: 14
-
-  # ---------------------------------------------------------------------------
-  # Android TV Tests — API 33
-  # Uses google-tv target with "Android TV 1080p" profile for leanback UI testing.
-  # API 33 chosen as stable TV platform (Android 13 TV with mature google-tv image).
-  # Verifies ro.build.characteristics contains "tv" to ensure correct device type.
-  # ---------------------------------------------------------------------------
-  android-tv-tests:
-    name: Android TV Tests (API 33)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [ lint, unit-tests ]
-    if: false  # Disabled: google-tv emulator image unstable on GitHub-hosted runners
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install NDK ${{ env.NDK_VERSION }}
-        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
-
-      - name: Setup Gradle with caching
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      # Cache TV AVD separately from mobile AVDs
-      - name: AVD cache (Android TV)
-        uses: actions/cache@v4
-        id: avd-cache-tv
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-tv-33-google-tv-x86_64
-          restore-keys: |
-            avd-tv-33-google-tv-x86_64-
-
-      - name: Create Android TV AVD snapshot
-        if: steps.avd-cache-tv.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2.30.1
-        with:
-          api-level: 33
-          target: google-tv
-          profile: "Android TV 1080p"
-          arch: x86_64
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: echo "Android TV AVD snapshot created"
-
-      - name: Run Android TV tests
-        uses: reactivecircus/android-emulator-runner@v2.30.1
-        timeout-minutes: 25
-        with:
-          api-level: 33
-          target: google-tv
-          profile: "Android TV 1080p"
-          arch: x86_64
-          emulator-options: -no-window -no-audio -no-snapshot-save -gpu swiftshader_indirect -no-boot-anim
-          emulator-boot-timeout: 300
-          disable-animations: true
-          script: |
-            echo "=== Verifying Android TV device ==="
-            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-            sleep 3
-            
-            TV_CHARS=$(adb shell getprop ro.build.characteristics)
-            echo "Device characteristics: $TV_CHARS"
-            
-            # Fail fast if not running on TV device
-            if echo "$TV_CHARS" | grep -q "tv"; then
-              echo "✓ Android TV device confirmed"
-            else
-              echo "✗ ERROR: Expected TV device, got: $TV_CHARS"
-              exit 1
-            fi
-            
-            echo "=== Running instrumented tests on Android TV ==="
-            ./gradlew :app:connectedDebugAndroidTest --stacktrace
-
-      - name: Upload Android TV test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-tv-test-results-api33
-          path: |
-            app/build/reports/androidTests/connected/
-            app/build/outputs/androidTest-results/connected/
-          retention-days: 14
-
-  # ---------------------------------------------------------------------------
-  # Debug APK Build
-  # Final artifact generation — only runs if all tests pass
-  # Verifies native libraries are present for all target ABIs
+  # Build Debug APK
+  # Runs only if both lint and unit tests pass
   # ---------------------------------------------------------------------------
   build-debug:
     name: Build Debug APK
@@ -346,7 +130,7 @@ jobs:
     needs: [ lint, unit-tests ]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -358,10 +142,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK ${{ env.NDK_VERSION }}
+      - name: Install NDK
         run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
-      - name: Setup Gradle with caching
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -373,7 +157,8 @@ jobs:
         run: |
           echo "=== Verifying native libraries in APK ==="
           for abi in armeabi-v7a arm64-v8a x86 x86_64; do
-            if unzip -l app/build/outputs/apk/debug/*.apk | grep -q "lib/${abi}/libsysmetrics_native.so"; then
+            if unzip -l app/build/outputs/apk/debug/*.apk \
+                | grep -q "lib/${abi}/libsysmetrics_native.so"; then
               echo "✓ ${abi}: libsysmetrics_native.so found"
             else
               echo "✗ ${abi}: libsysmetrics_native.so MISSING" && exit 1
@@ -383,6 +168,104 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
+          name: debug-apk-${{ github.sha }}
           path: app/build/outputs/apk/debug/*.apk
-          retention-days: 14
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Cleanup — runs after every build (success or failure on build, not on lint/test)
+  # Deletes old workflow runs and artifacts; keeps only the current run.
+  # Requires actions: write permission.
+  # ---------------------------------------------------------------------------
+  cleanup:
+    name: Cleanup Old Runs & Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ lint, unit-tests, build-debug ]
+    if: always()
+    permissions:
+      actions: write
+
+    steps:
+      - name: Delete old workflow runs (keep current)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+          WORKFLOW: ${{ github.workflow }}
+        run: |
+          echo "=== Deleting completed runs for workflow: $WORKFLOW ==="
+
+          PAGE=1
+          DELETED=0
+
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/workflows/android-ci.yml/runs?per_page=100&page=$PAGE&status=completed")
+
+            RUN_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.workflow_runs[] | select(.id | tostring != $current) | .id')
+
+            [ -z "$RUN_IDS" ] && break
+
+            for RUN_ID in $RUN_IDS; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID")
+              if [ "$STATUS" = "204" ]; then
+                echo "  ✓ Deleted run $RUN_ID"
+                DELETED=$((DELETED + 1))
+              fi
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+
+          echo "=== Deleted $DELETED old run(s) ==="
+
+      - name: Delete old artifacts (keep current run's artifacts)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN: ${{ github.run_id }}
+        run: |
+          echo "=== Deleting artifacts from previous runs ==="
+
+          DELETED=0
+          PAGE=1
+
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/artifacts?per_page=100&page=$PAGE")
+
+            ARTIFACT_IDS=$(echo "$RESPONSE" | jq -r \
+              --arg current "$CURRENT_RUN" \
+              '.artifacts[] | select(.workflow_run.id | tostring != $current) | .id')
+
+            [ -z "$ARTIFACT_IDS" ] && break
+
+            for ART_ID in $ARTIFACT_IDS; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$REPO/actions/artifacts/$ART_ID")
+              if [ "$STATUS" = "204" ]; then
+                echo "  ✓ Deleted artifact $ART_ID"
+                DELETED=$((DELETED + 1))
+              fi
+            done
+
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$TOTAL" -le 100 ] && break
+            PAGE=$((PAGE + 1))
+          done
+
+          echo "=== Deleted $DELETED old artifact(s) ==="
