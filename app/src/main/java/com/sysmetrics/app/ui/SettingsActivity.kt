@@ -9,33 +9,37 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.sysmetrics.app.R
-import com.sysmetrics.app.core.SysMetricsApplication
 import com.sysmetrics.app.data.model.OverlayPosition
-import com.sysmetrics.app.data.repository.MetricsHistoryRepository
 import com.sysmetrics.app.databinding.ActivitySettingsBinding
 import com.sysmetrics.app.domain.usecase.ExportMetricsUseCase
+import com.sysmetrics.app.domain.usecase.ManageOverlayConfigUseCase
 import com.sysmetrics.app.worker.MetricsCollectionWorker
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Settings activity - with export and background collection
  */
-// @AndroidEntryPoint
+@AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var viewModel: SettingsViewModel
-    private var exportUseCase: ExportMetricsUseCase? = null
     private var isBackgroundCollectionEnabled = false
+
+    // Injected via Hilt — same @Singleton instances the rest of the app (including
+    // MinimalistOverlayService) uses, so settings changes made here are observed
+    // everywhere without going through the legacy AppContainer.
+    @Inject lateinit var manageOverlayConfigUseCase: ManageOverlayConfigUseCase
+    @Inject lateinit var exportMetricsUseCase: ExportMetricsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialize dependencies from AppContainer
-        val appContainer = (application as SysMetricsApplication).appContainer
-        val factory = SettingsViewModelFactory(appContainer.manageOverlayConfigUseCase)
+        val factory = SettingsViewModelFactory(manageOverlayConfigUseCase)
         viewModel = ViewModelProvider(this, factory)[SettingsViewModel::class.java]
 
         setupToolbar()
@@ -103,25 +107,20 @@ class SettingsActivity : AppCompatActivity() {
                 isBackgroundCollectionEnabled = isChecked
                 if (isChecked) {
                     MetricsCollectionWorker.schedule(this@SettingsActivity)
-                    Toast.makeText(this@SettingsActivity, "Background collection enabled", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.background_collection_enabled), Toast.LENGTH_SHORT).show()
                 } else {
                     MetricsCollectionWorker.cancel(this@SettingsActivity)
-                    Toast.makeText(this@SettingsActivity, "Background collection disabled", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.background_collection_disabled), Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-    
+
     private fun exportMetrics(format: ExportMetricsUseCase.ExportFormat) {
         lifecycleScope.launch {
             try {
-                val historyRepository = MetricsHistoryRepository(
-                    com.sysmetrics.app.data.local.MetricsDatabase.getInstance(this@SettingsActivity).metricsHistoryDao()
-                )
-                val useCase = ExportMetricsUseCase(this@SettingsActivity, historyRepository)
-                
-                val result = useCase.export(24, format)
-                
+                val result = exportMetricsUseCase.export(24, format)
+
                 if (result.success && result.shareIntent != null) {
                     startActivity(Intent.createChooser(result.shareIntent, "Share Export"))
                 } else {
@@ -132,7 +131,7 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, getString(R.string.export_failed_with_reason, e.message), Toast.LENGTH_SHORT).show()
             }
         }
     }

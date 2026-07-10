@@ -1,6 +1,8 @@
 package com.sysmetrics.app.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -10,6 +12,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -18,18 +21,18 @@ import com.sysmetrics.app.R
 import com.sysmetrics.app.core.common.Constants
 import com.sysmetrics.app.data.model.OverlayConfig
 import com.sysmetrics.app.databinding.ActivityMainOverlayBinding
-import com.sysmetrics.app.core.SysMetricsApplication
+import com.sysmetrics.app.domain.collector.IMetricsCollector
 import com.sysmetrics.app.service.MinimalistOverlayService
-import com.sysmetrics.app.utils.MetricsCollector
 import com.sysmetrics.app.data.source.network.NetworkStatsDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
-import com.sysmetrics.app.core.di.DefaultDispatcherProvider
 import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import com.sysmetrics.app.utils.DeviceUtils
 import android.app.UiModeManager
 import android.content.res.Configuration
+import javax.inject.Inject
 
 /**
  * Main Activity - Optimized UX
@@ -38,16 +41,36 @@ import android.content.res.Configuration
  * - Clear status messages
  * Temperature monitoring removed for better performance
  */
-// @AndroidEntryPoint
+@AndroidEntryPoint
 class MainActivityOverlay : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainOverlayBinding
-    private lateinit var metricsCollector: MetricsCollector
-    private lateinit var networkStatsDataSource: NetworkStatsDataSource
-    private lateinit var systemDataSource: SystemDataSource
-    private lateinit var deviceUtils: DeviceUtils
+
+    // Injected via Hilt — shares the exact same @Singleton instances that
+    // MinimalistOverlayService uses, so this preview can never disagree with the
+    // running overlay (see AUDIT_REPORT.md: previously each held its own instance).
+    @Inject lateinit var metricsCollector: IMetricsCollector
+    @Inject lateinit var networkStatsDataSource: NetworkStatsDataSource
+    @Inject lateinit var systemDataSource: SystemDataSource
+    @Inject lateinit var deviceUtils: DeviceUtils
+
     private var isOverlayActive = false
-    
+
+    // API 33+: POST_NOTIFICATIONS is a runtime permission — without it the foreground
+    // service still starts, but its required-for-transparency notification stays hidden.
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) {
+            Timber.w("POST_NOTIFICATIONS denied — overlay service notification will stay hidden")
+            android.widget.Toast.makeText(
+                this,
+                R.string.notification_permission_denied,
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -64,20 +87,16 @@ class MainActivityOverlay : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainOverlayBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
-        // Initialize dependencies from AppContainer
-        val appContainer = (application as SysMetricsApplication).appContainer
-        metricsCollector = appContainer.metricsCollector
-        deviceUtils = appContainer.deviceUtils
-        
-        // Initialize data sources
-        val dispatcherProvider = DefaultDispatcherProvider()
-        networkStatsDataSource = NetworkStatsDataSource(dispatcherProvider)
-        systemDataSource = SystemDataSource(dispatcherProvider)
-        
+
         // Log device info for debugging
         Timber.d("Device info: ${deviceUtils.getDeviceInfo()}")
-        
+
+        // Ensure the shared collector has a baseline before this screen's preview polls it —
+        // harmless if MinimalistOverlayService already initialized it (idempotent reset).
+        lifecycleScope.launch {
+            metricsCollector.initializeBaseline()
+        }
+
         setupUI()
         checkServiceStatus()
     }
@@ -112,6 +131,20 @@ class MainActivityOverlay : AppCompatActivity() {
     }
 
     /**
+     * Requests POST_NOTIFICATIONS on API 33+ so the foreground overlay service's
+     * status notification is actually visible. Safe to call unconditionally —
+     * no-op below API 33 or if already granted.
+     */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    /**
      * Handle toggle button click
      */
     private fun handleToggleClick() {
@@ -133,8 +166,10 @@ class MainActivityOverlay : AppCompatActivity() {
      */
     private fun startOverlay() {
         try {
+            requestNotificationPermissionIfNeeded()
+
             val serviceIntent = Intent(this, MinimalistOverlayService::class.java)
-            
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
@@ -151,7 +186,7 @@ class MainActivityOverlay : AppCompatActivity() {
             Timber.d("Minimalist overlay service started")
         } catch (e: Exception) {
             Timber.e(e, "Failed to start overlay")
-            android.widget.Toast.makeText(this, "Failed to start overlay: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this, getString(R.string.overlay_start_failed, e.message), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -173,7 +208,7 @@ class MainActivityOverlay : AppCompatActivity() {
             Timber.d("Minimalist overlay service stopped")
         } catch (e: Exception) {
             Timber.e(e, "Failed to stop overlay")
-            android.widget.Toast.makeText(this, "Failed to stop overlay: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this, getString(R.string.overlay_stop_failed, e.message), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -244,7 +279,7 @@ class MainActivityOverlay : AppCompatActivity() {
                     tvTempPreview.text = String.format("%.0f°C", tempInfo.cpuTempCelsius)
                     tvTempPreview.setTextColor(getColorForTemperature(tempInfo.cpuTempCelsius))
                 } else {
-                    tvTempPreview.text = "N/A"
+                    tvTempPreview.text = getString(R.string.temperature_not_available)
                     tvTempPreview.setTextColor(ContextCompat.getColor(this@MainActivityOverlay, R.color.text_tertiary))
                 }
                 
