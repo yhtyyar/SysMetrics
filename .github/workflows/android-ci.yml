@@ -36,7 +36,7 @@ env:
     -Dorg.gradle.caching=true
     -Dorg.gradle.jvmargs=-Xmx4g
   JAVA_VERSION: '17'
-  NDK_VERSION: '25.2.9519653'
+  NDK_VERSION: '27.2.12479018'
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -235,6 +235,25 @@ jobs:
           REPO: ${{ github.repository }}
           CURRENT_RUN: ${{ github.run_id }}
         run: |
+          echo "=== Collecting run IDs that belong to android-ci.yml ==="
+          # The /actions/artifacts endpoint is repo-wide, not workflow-scoped — without
+          # this allow-list, this step would delete other workflows' artifacts too
+          # (e.g. release.yml's in-flight release-apk/release-aab/mapping artifacts).
+          ALLOWED_RUNS="[]"
+          PAGE=1
+          while true; do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/workflows/android-ci.yml/runs?per_page=100&page=$PAGE")
+            PAGE_IDS=$(echo "$RESPONSE" | jq -c '[.workflow_runs[].id]')
+            ALLOWED_RUNS=$(jq -c -n --argjson a "$ALLOWED_RUNS" --argjson b "$PAGE_IDS" '$a + $b')
+            [ "$(echo "$PAGE_IDS" | jq 'length')" -eq 0 ] && break
+            TOTAL=$(echo "$RESPONSE" | jq '.total_count')
+            [ "$((PAGE * 100))" -ge "$TOTAL" ] && break
+            PAGE=$((PAGE + 1))
+          done
+          echo "android-ci.yml owns $(echo "$ALLOWED_RUNS" | jq 'length') run(s)"
+
           echo "=== Deleting artifacts from previous runs ==="
 
           DELETED=0
@@ -246,8 +265,8 @@ jobs:
               "https://api.github.com/repos/$REPO/actions/artifacts?per_page=100&page=$PAGE")
 
             ARTIFACT_IDS=$(echo "$RESPONSE" | jq -r \
-              --arg current "$CURRENT_RUN" \
-              '.artifacts[] | select(.workflow_run.id | tostring != $current) | .id')
+              --arg current "$CURRENT_RUN" --argjson allowed "$ALLOWED_RUNS" \
+              '.artifacts[] | select((.workflow_run.id | tostring != $current) and ([.workflow_run.id] - $allowed | length == 0)) | .id')
 
             [ -z "$ARTIFACT_IDS" ] && break
 
