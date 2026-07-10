@@ -731,7 +731,11 @@ Java_com_sysmetrics_app_native_1bridge_NativeAnalytics_chartAddPoint(
 JNIEXPORT jfloatArray JNICALL
 Java_com_sysmetrics_app_native_1bridge_NativeAnalytics_chartGetNormalized(
         JNIEnv* env, jclass clazz, jlong handle, jint maxCount) {
-    std::vector<float> values(maxCount);
+    // Validate before allocating — a negative/huge maxCount would otherwise convert to an
+    // enormous size_t and throw std::length_error/bad_alloc across the JNI boundary, which
+    // aborts the whole process instead of raising a catchable Java exception.
+    if (maxCount <= 0) return nullptr;
+    std::vector<float> values(static_cast<size_t>(maxCount));
     int32_t count = native_chart_get_normalized(handle, values.data(), maxCount);
     
     if (count == 0) return nullptr;
