@@ -36,9 +36,13 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            // Left null (not "") when unset, so AGP's own signing-config completeness check
+            // fails release builds with a clear "missing required property" error instead of
+            // silently passing an empty password through to a confusing keystore/apksigner
+            // failure. Tasks that don't need release signing (lint, debug builds) are unaffected.
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
 
@@ -116,7 +120,9 @@ android {
         }
     }
 
-    ndkVersion = "25.2.9519653"
+    // r27+ is required for 16 KB memory page size support, a Google Play requirement
+    // for apps with native libraries submitted/updated from Nov 2025 onward.
+    ndkVersion = "27.2.12479018"
 }
 
 ksp {
@@ -174,8 +180,6 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.8")
-    testImplementation("org.mockito:mockito-core:5.6.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("app.cash.turbine:turbine:1.0.0")
