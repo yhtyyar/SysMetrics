@@ -11,6 +11,7 @@ import com.sysmetrics.app.domain.repository.IMetricsHistoryRepository
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +30,10 @@ class MetricsCollectionWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "MetricsWorker"
         const val WORK_NAME = "metrics_collection_work"
-        private const val DEFAULT_INTERVAL_MINUTES = 1L
+
+        // WorkManager enforces PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS (15 min) and
+        // silently clamps anything smaller — so 15 is the fastest cadence this can ever run at.
+        private const val DEFAULT_INTERVAL_MINUTES = 15L
 
         /**
          * Schedule periodic metrics collection.
@@ -81,6 +85,8 @@ class MetricsCollectionWorker @AssistedInject constructor(
             Timber.tag(TAG).d("Background collection completed: CPU=${metrics.cpuUsage}%, RAM=${metrics.ramUsagePercent}%")
             
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Background collection failed")
             Result.retry()

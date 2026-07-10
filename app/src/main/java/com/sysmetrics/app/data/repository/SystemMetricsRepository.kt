@@ -10,12 +10,15 @@ import com.sysmetrics.app.data.source.MetricsParser
 import com.sysmetrics.app.data.source.NetworkDataSource
 import com.sysmetrics.app.data.source.SystemDataSource
 import com.sysmetrics.app.domain.repository.ISystemMetricsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 /**
@@ -32,6 +35,11 @@ class SystemMetricsRepository constructor(
     private val batteryDataSource: BatteryDataSource
 ) : ISystemMetricsRepository {
     
+    // Guards the read-modify-write below — this repository is a Hilt @Singleton shared by the
+    // UI's continuous 1s Flow and the periodic background MetricsCollectionWorker, which
+    // otherwise race on previousCpuStats and can corrupt the CPU delta for either caller.
+    private val cpuStatsMutex = Mutex()
+
     @Volatile
     private var previousCpuStats: CpuStats = CpuStats.EMPTY
 
@@ -59,8 +67,11 @@ class SystemMetricsRepository constructor(
         return try {
             // Read CPU stats and calculate usage
             val currentCpuStats = systemDataSource.readCpuStats()
-            val cpuUsage = MetricsParser.calculateCpuUsage(previousCpuStats, currentCpuStats)
-            previousCpuStats = currentCpuStats
+            val cpuUsage = cpuStatsMutex.withLock {
+                val usage = MetricsParser.calculateCpuUsage(previousCpuStats, currentCpuStats)
+                previousCpuStats = currentCpuStats
+                usage
+            }
 
             // Read memory info
             val memoryInfo = systemDataSource.readMemoryInfo()
@@ -108,6 +119,8 @@ class SystemMetricsRepository constructor(
                 
                 timestamp = System.currentTimeMillis()
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to collect metrics")
             SystemMetrics.EMPTY
