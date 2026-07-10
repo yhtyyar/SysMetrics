@@ -46,6 +46,9 @@ SysMetrics requests only the minimum permissions required:
 - No analytics or tracking SDKs are included
 - Export functionality requires explicit user action
 - Room database auto-cleans data older than 24 hours
+- `android:allowBackup="true"` is scoped via `backup_rules.xml` / `data_extraction_rules.xml`
+  to shared preferences (settings) only — the metrics database is explicitly excluded from
+  Android Auto Backup and `adb backup`
 
 ### Native Code (JNI)
 

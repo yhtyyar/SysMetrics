@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
+    android:filterTouchesWhenObscured="true"
     tools:context=".ui.SettingsActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
@@ -118,6 +119,8 @@
                 android:text="@string/show_cpu"
                 android:textColor="@color/text_primary"
                 android:checked="true"
+                android:focusable="true"
+                android:background="@drawable/selector_focusable_item"
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
@@ -128,6 +131,8 @@
                 android:text="@string/show_ram"
                 android:textColor="@color/text_primary"
                 android:checked="true"
+                android:focusable="true"
+                android:background="@drawable/selector_focusable_item"
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
@@ -138,6 +143,8 @@
                 android:text="@string/show_time"
                 android:textColor="@color/text_primary"
                 android:checked="true"
+                android:focusable="true"
+                android:background="@drawable/selector_focusable_item"
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
@@ -151,7 +158,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Data Export"
+                android:text="@string/data_export_title"
                 android:textColor="@color/accent"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -160,7 +167,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Export last 24 hours of metrics history"
+                android:text="@string/data_export_description"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -179,6 +186,8 @@
                     android:layout_marginEnd="8dp"
                     android:text="@string/export_csv"
                     android:textColor="@color/text_primary"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/button_focus_animator"
                     app:strokeColor="@color/accent" />
 
                 <Button
@@ -190,6 +199,8 @@
                     android:layout_marginStart="8dp"
                     android:text="@string/export_json"
                     android:textColor="@color/text_primary"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/button_focus_animator"
                     app:strokeColor="@color/accent" />
             </LinearLayout>
 
@@ -203,7 +214,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Background Collection"
+                android:text="@string/background_collection_title"
                 android:textColor="@color/accent"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -213,9 +224,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Enable background data collection"
+                android:text="@string/background_collection_switch"
                 android:textColor="@color/text_primary"
                 android:checked="false"
+                android:focusable="true"
+                android:background="@drawable/selector_focusable_item"
                 app:thumbTint="@color/accent"
                 app:trackTint="@color/text_hint" />
 
@@ -223,7 +236,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Collects metrics every minute for 24-hour history"
+                android:text="@string/background_collection_description"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 

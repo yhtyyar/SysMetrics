@@ -57,6 +57,10 @@
     <string name="current_metrics">Current Metrics</string>
     <string name="overlay_started">Overlay monitoring started</string>
     <string name="overlay_stopped">Overlay monitoring stopped</string>
+    <string name="overlay_start_failed">Failed to start overlay: %1$s</string>
+    <string name="overlay_stop_failed">Failed to stop overlay: %1$s</string>
+    <string name="temperature_not_available">N/A</string>
+    <string name="notification_permission_denied">Notification permission denied — the running-monitor notification won\'t be shown</string>
 
     <!-- Android TV UI -->
     <string name="metric_icon">Metric icon</string>
@@ -93,4 +97,16 @@
     <string name="export_success">Export completed</string>
     <string name="export_error">Export failed</string>
     <string name="no_data_to_export">No data to export</string>
+
+    <!-- Background Collection -->
+    <string name="background_collection_title">Background Collection</string>
+    <string name="background_collection_switch">Enable background data collection</string>
+    <string name="background_collection_description">Collects metrics every 15 minutes for 24-hour history</string>
+
+    <!-- Data Export section (headers) -->
+    <string name="data_export_title">Data Export</string>
+    <string name="data_export_description">Export last 24 hours of metrics history</string>
+    <string name="background_collection_enabled">Background collection enabled</string>
+    <string name="background_collection_disabled">Background collection disabled</string>
+    <string name="export_failed_with_reason">Export failed: %1$s</string>
 </resources>

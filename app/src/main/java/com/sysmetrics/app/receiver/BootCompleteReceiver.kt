@@ -18,11 +18,12 @@ class BootCompleteReceiver : BroadcastReceiver() {
 
         Timber.d("BootCompleteReceiver triggered: ${intent.action}")
 
-        when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED,
-            "android.intent.action.QUICKBOOT_POWERON" -> {
-                handleBootComplete(context)
-            }
+        // Only ACTION_BOOT_COMPLETED is handled — it's an AOSP protected-broadcast that only
+        // the system can send. The legacy QUICKBOOT_POWERON action is not protected, so any
+        // installed app could send it to this exported receiver to force-(re)start the
+        // foreground overlay service; it isn't needed on modern Android and has been removed.
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            handleBootComplete(context)
         }
     }
 

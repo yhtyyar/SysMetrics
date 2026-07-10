@@ -57,8 +57,10 @@ class MetricsWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        
-        if (intent.action == ACTION_REFRESH) {
+
+        // ACTION_REFRESH is a public custom action on an exported receiver — restrict it to
+        // our own process so another installed app can't spam widget refreshes for free.
+        if (intent.action == ACTION_REFRESH && intent.`package` == context.packageName) {
             Timber.tag(TAG).d("Manual refresh requested")
             updateAllWidgets(context)
         }
@@ -95,6 +97,7 @@ class MetricsWidgetProvider : AppWidgetProvider() {
                 // Refresh button
                 val refreshIntent = Intent(context, MetricsWidgetProvider::class.java).apply {
                     action = ACTION_REFRESH
+                    `package` = context.packageName
                 }
                 val refreshPendingIntent = PendingIntent.getBroadcast(
                     context, 0, refreshIntent,
